@@ -1029,7 +1029,6 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 	if (!tmp_app_path->dir_exists(iconset_dir)) {
 		err = tmp_app_path->make_dir_recursive(iconset_dir);
 	}
-	memdelete(tmp_app_path);
 	if (err)
 		return err;
 
@@ -1037,7 +1036,16 @@ Error EditorExportPlatformIOS::export_project(const Ref<EditorExportPreset> &p_p
 	if (err)
 		return err;
 
-	err = _export_loading_screens(p_preset, dest_dir + binary_name + "/Images.xcassets/LaunchImage.launchimage/");
+	String launchimage_dir = dest_dir + binary_name + "/Images.xcassets/LaunchImage.launchimage/";
+	err = OK;
+	if (!tmp_app_path->dir_exists(launchimage_dir)) {
+		err = tmp_app_path->make_dir_recursive(launchimage_dir);
+	}
+	memdelete(tmp_app_path);
+	if (err)
+		return err;
+
+	err = _export_loading_screens(p_preset, launchimage_dir);
 	if (err)
 		return err;
 
