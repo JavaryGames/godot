@@ -88,5 +88,5 @@ void iphone_finish() {
 
 	printf("iphone_finish\n");
 	Main::cleanup();
-	delete os;
+	// delete os; this is causing EXC_BAD_ACCESS in ObjectDB::remove_instance
 };
