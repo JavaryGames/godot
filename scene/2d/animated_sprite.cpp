@@ -466,11 +466,7 @@ void AnimatedSprite::set_sprite_frames(const Ref<SpriteFrames> &p_frames) {
 	if (frames.is_valid())
 		frames->connect("changed", this, "_res_changed");
 
-	if (!frames.is_valid()) {
-		frame = 0;
-	} else {
-		set_frame(frame);
-	}
+	frame = 0;
 
 	_change_notify();
 	_reset_timeout();
