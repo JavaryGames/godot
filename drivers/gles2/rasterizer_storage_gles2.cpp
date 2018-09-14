@@ -1967,7 +1967,33 @@ VS::InstanceType RasterizerStorageGLES2::get_base_type(RID p_rid) const {
 }
 
 bool RasterizerStorageGLES2::free(RID p_rid) {
-	return false;
+
+	if (render_target_owner.owns(p_rid)) {
+
+		RenderTarget *rt = render_target_owner.getornull(p_rid);
+		_render_target_clear(rt);
+
+		Texture *t = texture_owner.get(rt->texture);
+		texture_owner.free(rt->texture);
+		memdelete(t);
+		render_target_owner.free(p_rid);
+		memdelete(rt);
+
+		return true;
+	} else if (texture_owner.owns(p_rid)) {
+
+		Texture *t = texture_owner.get(p_rid);
+		// can't free a render target texture
+		ERR_FAIL_COND_V(t->render_target, true);
+
+		info.texture_mem -= t->total_data_size;
+		texture_owner.free(p_rid);
+		memdelete(t);
+
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool RasterizerStorageGLES2::has_os_feature(const String &p_feature) const {
