@@ -47,6 +47,13 @@
 #include "scene/scene_string_names.h"
 #include "servers/physics_2d_server.h"
 
+#include "drivers/gles2/rasterizer_storage_gles2.h"
+#include "project_settings.h"
+#include "drivers/gles2/rasterizer_canvas_gles2.h"
+#include "drivers/gles2/rasterizer_scene_gles2.h"
+#include "image.h"
+
+
 void ViewportTexture::setup_local_to_scene() {
 
 	if (vp) {
@@ -119,10 +126,35 @@ bool ViewportTexture::has_alpha() const {
 
 	return false;
 }
+
 Ref<Image> ViewportTexture::get_data() const {
 
-	ERR_FAIL_COND_V(!vp, Ref<Image>());
-	return VS::get_singleton()->texture_get_data(vp->texture_rid);
+	// 1 == GLES2
+	if (OS::get_singleton()->get_current_video_driver() == 1){
+		
+		int width = this->get_width();
+		int height = this->get_height();
+		int size = width * height * 4;
+
+		WARN_PRINT("ViewportTexture::get_data()");
+
+		WARN_PRINT("4");
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+		WARN_PRINT("5");
+		Image *img = memnew(Image(width, height, false , Image::FORMAT_RGBA8));
+		WARN_PRINT("6");
+		img->lock();
+		glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, img->write_lock.ptr());
+		img->unlock();
+		return Ref<Image>(img);
+	}
+	else{
+
+		ERR_FAIL_COND_V(!vp, Ref<Image>());
+		return VS::get_singleton()->texture_get_data(vp->texture_rid);
+
+	}
+
 }
 void ViewportTexture::set_flags(uint32_t p_flags) {
 	flags = p_flags;
