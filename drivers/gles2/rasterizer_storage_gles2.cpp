@@ -37,7 +37,7 @@ GLuint RasterizerStorageGLES2::system_fbo = 0;
 
 /* TEXTURE API */
 
-void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> &capture_img){
+void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> capture_img){
 	/* Custom screen capture code */
 	RID texture_rid = this->render_target_get_texture(render_target);
 	RasterizerStorageGLES2::Texture *texture = this->texture_owner.get(texture_rid);
@@ -47,14 +47,11 @@ void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> &captu
 	int height = texture->height;
 	int size = width * height * 4;
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
-	Image *img = new Image(width, height, false , Image::FORMAT_RGBA8);
-	img->lock();
+	capture_img->lock();
 	WARN_PRINT("Before glReadPixels");
-	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, img->write_lock.ptr());
+	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, capture_img->write_lock.ptr());
 	WARN_PRINT("After glReadPixels");
-	img->unlock();
-	capture_img = Ref<Image>(img);
-
+	capture_img->unlock();
 	WARN_PRINT("Screen captured");
 }
 
