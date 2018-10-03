@@ -33,7 +33,7 @@
 #include "core/io/file_access_buffered_fa.h"
 #include "core/project_settings.h"
 #include "drivers/gles2/rasterizer_gles2.h"
-#include "drivers/gles3/rasterizer_gles3.h"
+// #include "drivers/gles3/rasterizer_gles3.h"
 #include "drivers/unix/dir_access_unix.h"
 #include "drivers/unix/file_access_unix.h"
 #include "file_access_android.h"
@@ -137,15 +137,15 @@ Error OS_Android::initialize(const VideoMode &p_desired, int p_video_driver, int
 	if (gfx_init_func)
 		gfx_init_func(gfx_init_ud, use_gl2);
 
-	if (use_gl2) {
+	//if (use_gl2) {
 		RasterizerGLES2::register_config();
 		RasterizerGLES2::make_current();
 		video_driver_index = VIDEO_DRIVER_GLES2;
-	} else {
-		RasterizerGLES3::register_config();
-		RasterizerGLES3::make_current();
-		video_driver_index = VIDEO_DRIVER_GLES3;
-	}
+	// } else {
+	// 	RasterizerGLES3::register_config();
+	// 	RasterizerGLES3::make_current();
+	// 	video_driver_index = VIDEO_DRIVER_GLES3;
+	// }
 
 	visual_server = memnew(VisualServerRaster);
 	/*	if (get_render_thread_mode() != RENDER_THREAD_UNSAFE) {

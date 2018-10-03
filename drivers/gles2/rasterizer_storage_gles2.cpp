@@ -31,10 +31,32 @@
 #include "project_settings.h"
 #include "rasterizer_canvas_gles2.h"
 #include "rasterizer_scene_gles2.h"
+#include "core/os/os.h"
 
 GLuint RasterizerStorageGLES2::system_fbo = 0;
 
 /* TEXTURE API */
+
+void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> &capture_img){
+	/* Custom screen capture code */
+	RID texture_rid = this->render_target_get_texture(render_target);
+	RasterizerStorageGLES2::Texture *texture = this->texture_owner.get(texture_rid);
+
+	// 1 == GLES2
+	int width = texture->width;
+	int height = texture->height;
+	int size = width * height * 4;
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	Image *img = new Image(width, height, false , Image::FORMAT_RGBA8);
+	img->lock();
+	WARN_PRINT("Before glReadPixels");
+	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, img->write_lock.ptr());
+	WARN_PRINT("After glReadPixels");
+	img->unlock();
+	capture_img = Ref<Image>(img);
+
+	WARN_PRINT("Screen captured");
+}
 
 Ref<Image> RasterizerStorageGLES2::_get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type) {
 

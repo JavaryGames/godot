@@ -47,6 +47,9 @@
 #include "scene/scene_string_names.h"
 #include "servers/physics_2d_server.h"
 
+#include "servers/visual/visual_server_global.h"
+#include "servers/visual/visual_server_viewport.h"
+
 void ViewportTexture::setup_local_to_scene() {
 
 	if (vp) {
@@ -2785,6 +2788,13 @@ void Viewport::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_subwindow_visibility_changed"), &Viewport::_subwindow_visibility_changed);
 
+
+	ClassDB::bind_method(D_METHOD("get_capture_flag"), &Viewport::get_capture_flag);
+	ClassDB::bind_method(D_METHOD("get_capture_img"), &Viewport::get_capture_img);
+	ClassDB::bind_method(D_METHOD("set_capture_flag", "flag"), &Viewport::set_capture_flag);
+	ClassDB::bind_method(D_METHOD("set_capture_img", "img"), &Viewport::set_capture_img);
+
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "arvr"), "set_use_arvr", "use_arvr");
 
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "size"), "set_size", "get_size");
@@ -2864,6 +2874,25 @@ void Viewport::_bind_methods() {
 	BIND_ENUM_CONSTANT(CLEAR_MODE_NEVER);
 	BIND_ENUM_CONSTANT(CLEAR_MODE_ONLY_NEXT_FRAME);
 }
+
+bool Viewport::get_capture_flag(){
+	printf("get flag\n");
+	return VSG::viewport->viewport_owner.get(this->viewport)->capture_flag;
+}
+void Viewport::set_capture_flag(bool flag){
+	printf("set flag\n");
+	VSG::viewport->viewport_owner.get(this->viewport)->capture_flag = flag;
+};
+
+Ref<Image> Viewport::get_capture_img(){
+	printf("get img\n");
+	return VSG::viewport->viewport_owner.get(this->viewport)->capture_img;
+};
+
+void Viewport::set_capture_img(Ref<Image> img){
+	printf("get flag\n");
+	VSG::viewport->viewport_owner.get(this->viewport)->capture_img = img;
+};
 
 void Viewport::_subwindow_visibility_changed() {
 
