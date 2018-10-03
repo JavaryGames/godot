@@ -338,10 +338,6 @@ if selected_platform in platform_list:
             env.Append(CCFLAGS=['-w'])
         env.Append(CCFLAGS=['-Werror=return-type'])
 
-
-    env.Append(CXXFLAGS=['-std=c++11'])
-
-
     suffix = "." + selected_platform
 
     if (env["target"] == "release"):

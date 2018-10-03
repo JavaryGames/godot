@@ -67,8 +67,6 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <chrono>
-
 
 void OS_Unix::debug_break() {
 
@@ -252,9 +250,10 @@ void OS_Unix::delay_usec(uint32_t p_usec) const {
 }
 uint64_t OS_Unix::get_ticks_usec() const {
 
-	uint64_t longtime = std::chrono::duration_cast<std::chrono::microseconds>(
-		std::chrono::steady_clock::now().time_since_epoch()).count();
+	struct timeval tv_now;
+	gettimeofday(&tv_now, NULL);
 
+	uint64_t longtime = (uint64_t)tv_now.tv_usec + (uint64_t)tv_now.tv_sec * 1000000L;
 	longtime -= ticks_start;
 
 	return longtime;
