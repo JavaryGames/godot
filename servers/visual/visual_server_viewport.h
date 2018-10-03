@@ -42,6 +42,8 @@ public:
 	};
 
 	struct Viewport : public RID_Data {
+		bool capture_flag;
+		Ref<Image> capture_img;
 
 		RID self;
 		RID parent;
@@ -108,6 +110,7 @@ public:
 		Map<RID, CanvasData> canvas_map;
 
 		Viewport() {
+			capture_flag = false;
 			update_mode = VS::VIEWPORT_UPDATE_WHEN_VISIBLE;
 			clear_mode = VS::VIEWPORT_CLEAR_ALWAYS;
 			transparent_bg = false;
@@ -149,6 +152,7 @@ private:
 	void _draw_viewport(Viewport *p_viewport, ARVRInterface::Eyes p_eye = ARVRInterface::EYE_MONO);
 
 public:
+
 	RID viewport_create();
 
 	void viewport_set_use_arvr(RID p_viewport, bool p_use_arvr);

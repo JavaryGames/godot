@@ -36,6 +36,8 @@
 
 #include "core/self_list.h"
 
+#include "scene/resources/texture.h"
+
 class RasterizerScene {
 public:
 	/* SHADOW ATLAS API */
@@ -583,6 +585,9 @@ public:
 	virtual int get_render_info(VS::RenderInfo p_info) = 0;
 
 	static RasterizerStorage *base_singleton;
+
+	virtual void capture_screen(RID render_target, Ref<Image> capture_img) = 0;
+
 	RasterizerStorage();
 	virtual ~RasterizerStorage() {}
 };

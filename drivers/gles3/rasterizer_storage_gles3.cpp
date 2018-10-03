@@ -34,6 +34,36 @@
 #include "rasterizer_canvas_gles3.h"
 #include "rasterizer_scene_gles3.h"
 
+void RasterizerStorageGLES3::capture_screen(RID render_target, Ref<Image> capture_img){
+	/* Custom screen capture code */
+	RID texture_rid = this->render_target_get_texture(render_target);
+	RasterizerStorageGLES3::Texture *texture = this->texture_owner.get(texture_rid);
+
+	// 1 == GLES2
+	int width = texture->width;
+	int height = texture->height;
+	int size = width * height * 4;
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	capture_img->lock();
+	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, capture_img->write_lock.ptr());
+
+	uint32_t *imgptr = (uint32_t *)capture_img->write_lock.ptr();
+	for (int y = 0; y < (height / 2); y++) {
+
+		uint32_t *ptr1 = &imgptr[y * width];
+		uint32_t *ptr2 = &imgptr[(height - y - 1) * width];
+
+		for (int x = 0; x < width; x++) {
+
+			uint32_t tmp = ptr1[x];
+			ptr1[x] = ptr2[x];
+			ptr2[x] = tmp;
+		}
+	}
+
+	capture_img->unlock();
+}
+
 /* TEXTURE API */
 
 #define _EXT_COMPRESSED_RGB_PVRTC_4BPPV1_IMG 0x8C00

@@ -37,6 +37,11 @@
 
 void VisualServerViewport::_draw_viewport(Viewport *p_viewport, ARVRInterface::Eyes p_eye) {
 
+	if (p_viewport->capture_flag && (OS::get_singleton()->get_current_video_driver() == 1)) {
+		VSG::storage->capture_screen(p_viewport->render_target, p_viewport->capture_img);
+		p_viewport->capture_flag = false;
+	}
+
 	/* Camera should always be BEFORE any other 3D */
 
 	bool scenario_draw_canvas_bg = false; //draw canvas, or some layer of it, as BG for 3D instead of in front
@@ -238,6 +243,7 @@ void VisualServerViewport::_draw_viewport(Viewport *p_viewport, ARVRInterface::E
 			scenario_draw_canvas_bg = false;
 		}
 
+
 		//VSG::canvas_render->canvas_debug_viewport_shadows(lights_with_shadow);
 	}
 }
@@ -318,6 +324,9 @@ void VisualServerViewport::draw_viewports() {
 				VSG::rasterizer->set_current_render_target(RID());
 				VSG::rasterizer->blit_render_target_to_screen(vp->render_target, vp->viewport_to_screen_rect, vp->viewport_to_screen);
 			}
+
+
+
 		}
 
 		if (vp->update_mode == VS::VIEWPORT_UPDATE_ONCE) {

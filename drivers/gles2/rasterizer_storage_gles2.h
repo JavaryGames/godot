@@ -1232,6 +1232,8 @@ public:
 
 	virtual int get_render_info(VS::RenderInfo p_info);
 
+	virtual void capture_screen(RID render_target, Ref<Image> capture_img);
+
 	RasterizerStorageGLES2();
 };
 
