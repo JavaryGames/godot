@@ -151,6 +151,10 @@ public:
 		CLEAR_MODE_ONLY_NEXT_FRAME
 	};
 
+
+	bool capture_flag;
+	Ref<Image> capture_img;
+
 private:
 	friend class ViewportTexture;
 
@@ -275,8 +279,8 @@ private:
 		List<Control *> roots;
 		int canvas_sort_index; //for sorting items with canvas as root
 
-		GUI();
-	} gui;
+		GUI();	
+		} gui;
 
 	bool disable_input;
 
@@ -473,6 +477,12 @@ public:
 	bool is_snap_controls_to_pixels_enabled() const;
 
 	void _subwindow_visibility_changed();
+
+	bool get_capture_flag();
+	void set_capture_flag(bool flag);
+
+	Ref<Image> get_capture_img();
+	void set_capture_img(Ref<Image> img);
 
 	Viewport();
 	~Viewport();
