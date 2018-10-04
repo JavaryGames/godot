@@ -48,9 +48,7 @@ void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> captur
 	int size = width * height * 4;
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	capture_img->lock();
-	WARN_PRINT("Before glReadPixels");
 	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, capture_img->write_lock.ptr());
-	WARN_PRINT("After glReadPixels");
 
 	uint32_t *imgptr = (uint32_t *)capture_img->write_lock.ptr();
 	for (int y = 0; y < (height / 2); y++) {
@@ -67,7 +65,6 @@ void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> captur
 	}
 
 	capture_img->unlock();
-	WARN_PRINT("Screen captured");
 }
 
 Ref<Image> RasterizerStorageGLES2::_get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type) {

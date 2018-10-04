@@ -2875,22 +2875,18 @@ void Viewport::_bind_methods() {
 	BIND_ENUM_CONSTANT(CLEAR_MODE_ONLY_NEXT_FRAME);
 }
 
-bool Viewport::get_capture_flag(){
-	printf("get flag\n");
+bool Viewport::get_capture_flag() {
 	return VSG::viewport->viewport_owner.get(this->viewport)->capture_flag;
 }
-void Viewport::set_capture_flag(bool flag){
-	printf("set flag\n");
+void Viewport::set_capture_flag(bool flag) {
 	VSG::viewport->viewport_owner.get(this->viewport)->capture_flag = flag;
 };
 
-Ref<Image> Viewport::get_capture_img(){
-	printf("get img\n");
+Ref<Image> Viewport::get_capture_img() {
 	return VSG::viewport->viewport_owner.get(this->viewport)->capture_img;
 };
 
-void Viewport::set_capture_img(Ref<Image> img){
-	printf("get flag\n");
+void Viewport::set_capture_img(Ref<Image> img) {
 	VSG::viewport->viewport_owner.get(this->viewport)->capture_img = img;
 };
 

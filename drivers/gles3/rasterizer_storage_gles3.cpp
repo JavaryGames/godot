@@ -45,9 +45,7 @@ void RasterizerStorageGLES3::capture_screen(RID render_target, Ref<Image> captur
 	int size = width * height * 4;
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	capture_img->lock();
-	WARN_PRINT("Before glReadPixels");
 	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, capture_img->write_lock.ptr());
-	WARN_PRINT("After glReadPixels");
 
 	uint32_t *imgptr = (uint32_t *)capture_img->write_lock.ptr();
 	for (int y = 0; y < (height / 2); y++) {
@@ -64,7 +62,6 @@ void RasterizerStorageGLES3::capture_screen(RID render_target, Ref<Image> captur
 	}
 
 	capture_img->unlock();
-	WARN_PRINT("Screen captured");
 }
 
 /* TEXTURE API */
