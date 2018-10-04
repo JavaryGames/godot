@@ -33,7 +33,6 @@
 #include "visual_server_canvas.h"
 #include "visual_server_global.h"
 #include "visual_server_scene.h"
-#include "drivers/gles2/rasterizer_storage_gles2.h"
 
 void VisualServerViewport::_draw_viewport(Viewport *p_viewport, ARVRInterface::Eyes p_eye) {
 
