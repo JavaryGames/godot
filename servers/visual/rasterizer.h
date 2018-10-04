@@ -560,7 +560,7 @@ public:
 
 	static RasterizerStorage *base_singleton;
 
-	virtual void capture_screen(RID render_target, Ref<Image> &capture_img) = 0;
+	virtual void capture_screen(RID render_target, Ref<Image> capture_img) = 0;
 
 	RasterizerStorage();
 	virtual ~RasterizerStorage() {}
