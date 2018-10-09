@@ -37,7 +37,7 @@
 
 void VisualServerViewport::_draw_viewport(Viewport *p_viewport, ARVRInterface::Eyes p_eye) {
 
-	if (p_viewport->capture_flag && (OS::get_singleton()->get_current_video_driver() == 1)) {
+	if (p_viewport->capture_flag) {
 		VSG::storage->capture_screen(p_viewport->render_target, p_viewport->capture_img);
 		p_viewport->capture_flag = false;
 	}
