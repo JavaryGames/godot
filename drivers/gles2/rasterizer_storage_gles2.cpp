@@ -489,8 +489,6 @@ void RasterizerStorageGLES2::texture_set_data_partial(RID p_texture, const Ref<I
 }
 
 Ref<Image> RasterizerStorageGLES2::texture_get_data(RID p_texture, VS::CubeMapSide p_cube_side) const {
-	WARN_PRINT("RasterizerStorageGLES2::texture_get_data");
-
 	Texture *texture = texture_owner.getornull(p_texture);
 
 	ERR_FAIL_COND_V(!texture, Ref<Image>());
@@ -538,22 +536,15 @@ Ref<Image> RasterizerStorageGLES2::texture_get_data(RID p_texture, VS::CubeMapSi
 	return Ref<Image>(img);
 #else
 	{
-		WARN_PRINT("Trying to get the data from the texture.");
 		PoolVector<uint8_t> *pixels = new PoolVector<uint8_t>();
-		WARN_PRINT("1");
 		pixels->resize(texture->width * texture->height * 4);
-		WARN_PRINT("2");
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
-		WARN_PRINT("3");
 		auto pixels_write = pixels->write();
 		glReadPixels(0,0,texture->width,texture->height, GL_RGBA, GL_UNSIGNED_BYTE, pixels_write.ptr());
-		WARN_PRINT("4");
 		Image *img = new Image(texture->width, texture->height, texture->mipmaps > 1 ? true : false, texture->format, *pixels);
-		WARN_PRINT("5");
 		return Ref<Image>(img);
 		
-	}	
-	ERR_EXPLAIN("Sorry, It's not posible to obtain images back in OpenGL ES");
+	}
 	return Ref<Image>();
 #endif
 }
