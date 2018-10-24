@@ -1045,6 +1045,20 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 			return;
 		}
+#else
+		if (unlikely(!E)) {
+			const char *msg = "Calling non-existent method (or calling on null).";
+			if (!Engine::get_singleton()->has_singleton("CrashThrow")) {
+				throw msg;
+			}
+			Object *ct = Engine::get_singleton()->get_singleton_object("CrashThrow");
+
+			String message(msg);
+			ct->call(StringName("Throw"), message);
+			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+			return;
+			//CrashThrow::crash_throw("Calling non-existent method (or calling on null).");
+		}
 #endif
 		_VariantCall::FuncData &funcdata = E->get();
 		funcdata.call(ret, *this, p_args, p_argcount, r_error);
