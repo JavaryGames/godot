@@ -1060,6 +1060,11 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 			return;
 		}
+#else
+		if (unlikely(!E)) {
+			String msg = "Calling non-existent method '" + String(p_method) + "' on base '" + get_type_name(get_type()) + "'.";
+			throw msg;
+		}
 #endif
 		_VariantCall::FuncData &funcdata = E->get();
 		funcdata.call(ret, *this, p_args, p_argcount, r_error);
