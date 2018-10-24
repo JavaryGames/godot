@@ -400,6 +400,14 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #endif
 	bool exit_ok = false;
 
+#ifndef DEBUG_ENABLED
+	ScriptLanguage::ScriptInfo info;
+	info.function = name;
+	info.path = _script->path;
+	info.line = _initial_line;
+	GDScriptLanguage::get_singleton()->set_script_info(info);
+#endif
+
 #ifdef DEBUG_ENABLED
 	OPCODE_WHILE(ip < _code_size) {
 		int last_opcode = _code_ptr[ip];
@@ -1244,6 +1252,10 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				line = _code_ptr[ip + 1];
 				ip += 2;
 
+#ifndef DEBUG_ENABLED
+				GDScriptLanguage::get_singleton()->set_script_info_line(line);
+#endif
+
 				if (ScriptDebugger::get_singleton()) {
 					// line
 					bool do_break = false;
@@ -1285,6 +1297,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 		}
 
 		OPCODES_END
+
 #ifdef DEBUG_ENABLED
 		if (exit_ok)
 			OPCODE_OUT;
