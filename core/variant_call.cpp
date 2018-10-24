@@ -1047,27 +1047,8 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 		}
 #else
 		if (unlikely(!E)) {
-			ScriptLanguage *sl = NULL;
-			for (int i = 0; i < ScriptServer::get_language_count(); i++) {
-				sl = ScriptServer::get_language(i);
-				if (sl->get_name() == "GDScript") {
-					break;
-				}
-			}
-			ScriptLanguage::ScriptInfo info;
-			if (sl) {
-				info = sl->get_script_info();
-			}
-			// const char *msg = "Calling non-existent method (or calling on null).";
-			String message = "Calling non-existent method (or calling on null). On " + info.function + " - " + info.path + ":" + itos(info.line);
-			if (!Engine::get_singleton()->has_singleton("CrashThrow")) {
-				throw message.c_str();
-			}
-			Object *ct = Engine::get_singleton()->get_singleton_object("CrashThrow");
-
-			ct->call(StringName("Throw"), message);
-			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
-			return;
+			String msg = "Calling non-existent method '" + String(p_method) + "' on base '" + get_type_name(get_type()) + "'.";
+			throw msg;
 		}
 #endif
 		_VariantCall::FuncData &funcdata = E->get();

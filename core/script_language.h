@@ -197,18 +197,6 @@ public:
 
 class ScriptLanguage {
 public:
-	struct ScriptInfo {
-		String path;
-		String function;
-		int line;
-	};
-private:
-	ScriptInfo current_info;
-public:
-
-	virtual void set_script_info(ScriptInfo p_info) { current_info = p_info; }
-	virtual ScriptInfo get_script_info() { return current_info; }
-	_FORCE_INLINE_ virtual void set_script_info_line(int p_line) { current_info.line = p_line; }
 
 	virtual String get_name() const = 0;
 

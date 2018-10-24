@@ -822,13 +822,24 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 #endif
 				Variant::CallError err;
-				if (call_ret) {
+				try {
+					if (call_ret) {
 
-					GET_VARIANT_PTR(ret, argc);
-					base->call_ptr(*methodname, (const Variant **)argptrs, argc, ret, err);
-				} else {
+						GET_VARIANT_PTR(ret, argc);
+						base->call_ptr(*methodname, (const Variant **)argptrs, argc, ret, err);
+					} else {
 
-					base->call_ptr(*methodname, (const Variant **)argptrs, argc, NULL, err);
+						base->call_ptr(*methodname, (const Variant **)argptrs, argc, NULL, err);
+					}
+				} catch (String exception) {
+					String message = exception + "\nOn " + String(name) + " - " + _script->path + ":" + itos(line);
+					if (Engine::get_singleton()->has_singleton("CrashThrow")) {
+						Object *crash = Engine::get_singleton()->get_singleton_object("CrashThrow");
+						crash->call("Throw", message);
+						GD_ERR_BREAK(1);
+					} else {
+						throw message.utf8().get_data();
+					}
 				}
 #ifdef DEBUG_ENABLED
 				if (GDScriptLanguage::get_singleton()->profiling) {
@@ -1251,10 +1262,6 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 				line = _code_ptr[ip + 1];
 				ip += 2;
-
-#ifndef DEBUG_ENABLED
-				GDScriptLanguage::get_singleton()->set_script_info_line(line);
-#endif
 
 				if (ScriptDebugger::get_singleton()) {
 					// line
