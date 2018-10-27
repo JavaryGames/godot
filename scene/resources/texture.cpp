@@ -639,12 +639,15 @@ Error StreamTexture::_load_data(const String &p_path, int &tw, int &th, int &fla
 
 Error StreamTexture::load(const String &p_path) {
 
+	print_line("READING STREAM TEXTURE: " + p_path);
 	int lw, lh, lflags;
 	Ref<Image> image;
 	image.instance();
 	Error err = _load_data(p_path, lw, lh, lflags, image);
 	if (err)
 		return err;
+
+	print_line("image size is: " + itos(image->get_data().size()));
 
 	VS::get_singleton()->texture_allocate(texture, image->get_width(), image->get_height(), image->get_format(), lflags);
 	VS::get_singleton()->texture_set_data(texture, image);

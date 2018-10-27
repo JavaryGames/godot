@@ -278,8 +278,10 @@ Ref<ResourceInteractiveLoader> ResourceLoader::load_interactive(const String &p_
 			continue;
 		found = true;
 		Ref<ResourceInteractiveLoader> ril = loader[i]->load_interactive(path, local_path, r_error);
-		if (ril.is_null())
+		if (ril.is_null()) {
+			ERR_PRINT("ril is null");
 			continue;
+		}
 		if (!p_no_cache)
 			ril->set_local_path(local_path);
 		if (xl_remapped)

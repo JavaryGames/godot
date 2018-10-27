@@ -385,6 +385,7 @@ void RasterizerStorageGLES2::texture_set_data(RID p_texture, const Ref<Image> &p
 
 	texture->data_size = img->get_data().size();
 	PoolVector<uint8_t>::Read read = img->get_data().read();
+    print_line("read img size " + itos(img->get_data().size()) + " format " + itos(real_format));
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(texture->target, texture->tex_id);
