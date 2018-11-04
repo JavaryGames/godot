@@ -1221,7 +1221,7 @@ Ref<ResourceInteractiveLoader> ResourceFormatLoaderText::load_interactive(const 
 	FileAccess *f = FileAccess::open(p_path, FileAccess::READ, &err);
 
 	if (err != OK) {
-
+		ERR_EXPLAIN("Can't open file " + p_path + ": " + itos(err));
 		ERR_FAIL_COND_V(err != OK, Ref<ResourceInteractiveLoader>());
 	}
 
