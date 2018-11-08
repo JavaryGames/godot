@@ -30,8 +30,8 @@
 
 #include "graph_edit.h"
 
-#include "os/input.h"
-#include "os/keyboard.h"
+#include "core/os/input.h"
+#include "core/os/keyboard.h"
 #include "scene/gui/box_container.h"
 
 #define ZOOM_SCALE 1.2
@@ -268,6 +268,10 @@ void GraphEdit::remove_child_notify(Node *p_child) {
 
 void GraphEdit::_notification(int p_what) {
 
+	if (p_what == NOTIFICATION_ENTER_TREE || p_what == NOTIFICATION_THEME_CHANGED) {
+		port_grab_distance_horizontal = get_constant("port_grab_distance_horizontal");
+		port_grab_distance_vertical = get_constant("port_grab_distance_vertical");
+	}
 	if (p_what == NOTIFICATION_READY) {
 		Size2 hmin = h_scroll->get_combined_minimum_size();
 		Size2 vmin = v_scroll->get_combined_minimum_size();
@@ -343,8 +347,6 @@ bool GraphEdit::_filter_input(const Point2 &p_point) {
 
 	Ref<Texture> port = get_icon("port", "GraphNode");
 
-	float grab_r_extend = 2.0;
-	float grab_r = port->get_width() * 0.5 * grab_r_extend;
 	for (int i = get_child_count() - 1; i >= 0; i--) {
 
 		GraphNode *gn = Object::cast_to<GraphNode>(get_child(i));
@@ -354,14 +356,14 @@ bool GraphEdit::_filter_input(const Point2 &p_point) {
 		for (int j = 0; j < gn->get_connection_output_count(); j++) {
 
 			Vector2 pos = gn->get_connection_output_position(j) + gn->get_position();
-			if (pos.distance_to(p_point) < grab_r)
+			if (is_in_hot_zone(pos, p_point))
 				return true;
 		}
 
 		for (int j = 0; j < gn->get_connection_input_count(); j++) {
 
 			Vector2 pos = gn->get_connection_input_position(j) + gn->get_position();
-			if (pos.distance_to(p_point) < grab_r) {
+			if (is_in_hot_zone(pos, p_point)) {
 				return true;
 			}
 		}
@@ -372,13 +374,11 @@ bool GraphEdit::_filter_input(const Point2 &p_point) {
 
 void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 
-	float grab_r_extend = 2.0;
 	Ref<InputEventMouseButton> mb = p_ev;
 	if (mb.is_valid() && mb->get_button_index() == BUTTON_LEFT && mb->is_pressed()) {
 
 		Ref<Texture> port = get_icon("port", "GraphNode");
 		Vector2 mpos(mb->get_position().x, mb->get_position().y);
-		float grab_r = port->get_width() * 0.5 * grab_r_extend;
 		for (int i = get_child_count() - 1; i >= 0; i--) {
 
 			GraphNode *gn = Object::cast_to<GraphNode>(get_child(i));
@@ -388,7 +388,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 			for (int j = 0; j < gn->get_connection_output_count(); j++) {
 
 				Vector2 pos = gn->get_connection_output_position(j) + gn->get_position();
-				if (pos.distance_to(mpos) < grab_r) {
+				if (is_in_hot_zone(pos, mpos)) {
 
 					if (valid_left_disconnect_types.has(gn->get_connection_output_type(j))) {
 						//check disconnect
@@ -406,7 +406,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 									connecting_color = Object::cast_to<GraphNode>(to)->get_connection_input_color(E->get().to_port);
 									connecting_target = false;
 									connecting_to = pos;
-									just_disconected = true;
+									just_disconnected = true;
 
 									emit_signal("disconnection_request", E->get().from, E->get().from_port, E->get().to, E->get().to_port);
 									to = get_node(String(connecting_from)); //maybe it was erased
@@ -427,7 +427,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 					connecting_color = gn->get_connection_output_color(j);
 					connecting_target = false;
 					connecting_to = pos;
-					just_disconected = false;
+					just_disconnected = false;
 					return;
 				}
 			}
@@ -435,8 +435,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 			for (int j = 0; j < gn->get_connection_input_count(); j++) {
 
 				Vector2 pos = gn->get_connection_input_position(j) + gn->get_position();
-
-				if (pos.distance_to(mpos) < grab_r) {
+				if (is_in_hot_zone(pos, mpos)) {
 
 					if (right_disconnects || valid_right_disconnect_types.has(gn->get_connection_input_type(j))) {
 						//check disconnect
@@ -454,7 +453,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 									connecting_color = Object::cast_to<GraphNode>(fr)->get_connection_output_color(E->get().from_port);
 									connecting_target = false;
 									connecting_to = pos;
-									just_disconected = true;
+									just_disconnected = true;
 
 									emit_signal("disconnection_request", E->get().from, E->get().from_port, E->get().to, E->get().to_port);
 									fr = get_node(String(connecting_from)); //maybe it was erased
@@ -475,7 +474,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 					connecting_color = gn->get_connection_input_color(j);
 					connecting_target = false;
 					connecting_to = pos;
-					just_disconected = true;
+					just_disconnected = true;
 
 					return;
 				}
@@ -492,7 +491,6 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 
 		Ref<Texture> port = get_icon("port", "GraphNode");
 		Vector2 mpos = mm->get_position();
-		float grab_r = port->get_width() * 0.5 * grab_r_extend;
 		for (int i = get_child_count() - 1; i >= 0; i--) {
 
 			GraphNode *gn = Object::cast_to<GraphNode>(get_child(i));
@@ -504,7 +502,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 
 					Vector2 pos = gn->get_connection_output_position(j) + gn->get_position();
 					int type = gn->get_connection_output_type(j);
-					if ((type == connecting_type || valid_connection_types.has(ConnType(type, connecting_type))) && pos.distance_to(mpos) < grab_r) {
+					if ((type == connecting_type || valid_connection_types.has(ConnType(type, connecting_type))) && is_in_hot_zone(pos, mpos)) {
 
 						connecting_target = true;
 						connecting_to = pos;
@@ -519,7 +517,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 
 					Vector2 pos = gn->get_connection_input_position(j) + gn->get_position();
 					int type = gn->get_connection_input_type(j);
-					if ((type == connecting_type || valid_connection_types.has(ConnType(type, connecting_type))) && pos.distance_to(mpos) < grab_r) {
+					if ((type == connecting_type || valid_connection_types.has(ConnType(type, connecting_type))) && is_in_hot_zone(pos, mpos)) {
 						connecting_target = true;
 						connecting_to = pos;
 						connecting_target_to = gn->get_name();
@@ -546,7 +544,7 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 			}
 			emit_signal("connection_request", from, from_slot, to, to_slot);
 
-		} else if (!just_disconected) {
+		} else if (!just_disconnected) {
 			String from = connecting_from;
 			int from_slot = connecting_index;
 			Vector2 ofs = Vector2(mb->get_position().x, mb->get_position().y);
@@ -557,6 +555,57 @@ void GraphEdit::_top_layer_input(const Ref<InputEvent> &p_ev) {
 		update();
 		connections_layer->update();
 	}
+}
+
+bool GraphEdit::_check_clickable_control(Control *p_control, const Vector2 &pos) {
+
+	if (p_control->is_set_as_toplevel() || !p_control->is_visible())
+		return false;
+
+	if (!p_control->has_point(pos) || p_control->get_mouse_filter() == MOUSE_FILTER_IGNORE) {
+		//test children
+		for (int i = 0; i < p_control->get_child_count(); i++) {
+			Control *subchild = Object::cast_to<Control>(p_control->get_child(i));
+			if (!subchild)
+				continue;
+			if (_check_clickable_control(subchild, pos - subchild->get_position())) {
+				return true;
+			}
+		}
+
+		return false;
+	} else {
+		return true;
+	}
+}
+
+bool GraphEdit::is_in_hot_zone(const Vector2 &pos, const Vector2 &p_mouse_pos) {
+	if (!Rect2(pos.x - port_grab_distance_horizontal, pos.y - port_grab_distance_vertical, port_grab_distance_horizontal * 2, port_grab_distance_vertical * 2).has_point(p_mouse_pos))
+		return false;
+
+	for (int i = 0; i < get_child_count(); i++) {
+		Control *child = Object::cast_to<Control>(get_child(i));
+		if (!child)
+			continue;
+		Rect2 rect = child->get_rect();
+		if (rect.has_point(p_mouse_pos)) {
+
+			//check sub-controls
+			Vector2 subpos = p_mouse_pos - rect.position;
+
+			for (int j = 0; j < child->get_child_count(); j++) {
+				Control *subchild = Object::cast_to<Control>(child->get_child(j));
+				if (!subchild)
+					continue;
+
+				if (_check_clickable_control(subchild, subpos - subchild->get_position())) {
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 template <class Vector2>
@@ -993,7 +1042,7 @@ void GraphEdit::set_connection_activity(const StringName &p_from, int p_from_por
 
 		if (E->get().from == p_from && E->get().from_port == p_from_port && E->get().to == p_to && E->get().to_port == p_to_port) {
 
-			if (ABS(E->get().activity != p_activity)) {
+			if (ABS(E->get().activity - p_activity) < CMP_EPSILON) {
 				//update only if changed
 				top_layer->update();
 				connections_layer->update();
@@ -1230,7 +1279,7 @@ void GraphEdit::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("disconnection_request", PropertyInfo(Variant::STRING, "from"), PropertyInfo(Variant::INT, "from_slot"), PropertyInfo(Variant::STRING, "to"), PropertyInfo(Variant::INT, "to_slot")));
 	ADD_SIGNAL(MethodInfo("popup_request", PropertyInfo(Variant::VECTOR2, "p_position")));
 	ADD_SIGNAL(MethodInfo("duplicate_nodes_request"));
-	ADD_SIGNAL(MethodInfo("node_selected", PropertyInfo(Variant::OBJECT, "node")));
+	ADD_SIGNAL(MethodInfo("node_selected", PropertyInfo(Variant::OBJECT, "node", PROPERTY_HINT_RESOURCE_TYPE, "Node")));
 	ADD_SIGNAL(MethodInfo("connection_to_empty", PropertyInfo(Variant::STRING, "from"), PropertyInfo(Variant::INT, "from_slot"), PropertyInfo(Variant::VECTOR2, "release_position")));
 	ADD_SIGNAL(MethodInfo("delete_nodes_request"));
 	ADD_SIGNAL(MethodInfo("_begin_node_move"));
@@ -1255,7 +1304,7 @@ GraphEdit::GraphEdit() {
 	add_child(connections_layer);
 	connections_layer->connect("draw", this, "_connections_layer_draw");
 	connections_layer->set_name("CLAYER");
-	connections_layer->set_disable_visibility_clip(true); // so it can draw freely and be offseted
+	connections_layer->set_disable_visibility_clip(true); // so it can draw freely and be offset
 	connections_layer->set_mouse_filter(MOUSE_FILTER_IGNORE);
 
 	h_scroll = memnew(HScrollBar);
@@ -1319,6 +1368,6 @@ GraphEdit::GraphEdit() {
 	zoom_hb->add_child(snap_amount);
 
 	setting_scroll_ofs = false;
-	just_disconected = false;
+	just_disconnected = false;
 	set_clip_contents(true);
 }

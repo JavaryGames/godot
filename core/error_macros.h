@@ -31,7 +31,7 @@
 #ifndef ERROR_MACROS_H
 #define ERROR_MACROS_H
 
-#include "typedefs.h"
+#include "core/typedefs.h"
 /**
  * Error macros. Unlike exceptions and asserts, these macros try to maintain consistency and stability
  * inside the code. It is recommended to always return processable data, so in case of an error, the
@@ -313,7 +313,7 @@ extern bool _err_error_exists;
 
 #define WARN_DEPRECATED                                                                                                                                   \
 	{                                                                                                                                                     \
-		static bool warning_shown = false;                                                                                                                \
+		static volatile bool warning_shown = false;                                                                                                       \
 		if (!warning_shown) {                                                                                                                             \
 			_err_print_error(FUNCTION_STR, __FILE__, __LINE__, "This method has been deprecated and will be removed in the future", ERR_HANDLER_WARNING); \
 			_err_error_exists = false;                                                                                                                    \

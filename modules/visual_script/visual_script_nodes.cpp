@@ -30,11 +30,11 @@
 
 #include "visual_script_nodes.h"
 
-#include "engine.h"
-#include "global_constants.h"
-#include "os/input.h"
-#include "os/os.h"
-#include "project_settings.h"
+#include "core/engine.h"
+#include "core/global_constants.h"
+#include "core/os/input.h"
+#include "core/os/os.h"
+#include "core/project_settings.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 
@@ -54,8 +54,8 @@ bool VisualScriptFunction::_set(const StringName &p_name, const Variant &p_value
 		arguments.resize(new_argc);
 
 		for (int i = argc; i < new_argc; i++) {
-			arguments[i].name = "arg" + itos(i + 1);
-			arguments[i].type = Variant::NIL;
+			arguments.write[i].name = "arg" + itos(i + 1);
+			arguments.write[i].type = Variant::NIL;
 		}
 		ports_changed_notify();
 		_change_notify();
@@ -68,7 +68,7 @@ bool VisualScriptFunction::_set(const StringName &p_name, const Variant &p_value
 		if (what == "type") {
 
 			Variant::Type new_type = Variant::Type(int(p_value));
-			arguments[idx].type = new_type;
+			arguments.write[idx].type = new_type;
 			ports_changed_notify();
 
 			return true;
@@ -76,7 +76,7 @@ bool VisualScriptFunction::_set(const StringName &p_name, const Variant &p_value
 
 		if (what == "name") {
 
-			arguments[idx].name = p_value;
+			arguments.write[idx].name = p_value;
 			ports_changed_notify();
 			return true;
 		}
@@ -167,7 +167,7 @@ void VisualScriptFunction::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::INT, "stack/size", PROPERTY_HINT_RANGE, "1,100000"));
 	}
 	p_list->push_back(PropertyInfo(Variant::BOOL, "stack/stackless"));
-	p_list->push_back(PropertyInfo(Variant::INT, "rpc/mode", PROPERTY_HINT_ENUM, "Disabled,Remote,Sync,Master,Slave"));
+	p_list->push_back(PropertyInfo(Variant::INT, "rpc/mode", PROPERTY_HINT_ENUM, "Disabled,Remote,Master,Puppet,Remote Sync,Master Sync,Puppet Sync"));
 }
 
 int VisualScriptFunction::get_output_sequence_port_count() const {
@@ -205,6 +205,8 @@ PropertyInfo VisualScriptFunction::get_output_value_port_info(int p_idx) const {
 	PropertyInfo out;
 	out.type = arguments[p_idx].type;
 	out.name = arguments[p_idx].name;
+	out.hint = arguments[p_idx].hint;
+	out.hint_string = arguments[p_idx].hint_string;
 	return out;
 }
 
@@ -218,11 +220,13 @@ String VisualScriptFunction::get_text() const {
 	return get_name(); //use name as function name I guess
 }
 
-void VisualScriptFunction::add_argument(Variant::Type p_type, const String &p_name, int p_index) {
+void VisualScriptFunction::add_argument(Variant::Type p_type, const String &p_name, int p_index, const PropertyHint p_hint, const String &p_hint_string) {
 
 	Argument arg;
 	arg.name = p_name;
 	arg.type = p_type;
+	arg.hint = p_hint;
+	arg.hint_string = p_hint_string;
 	if (p_index >= 0)
 		arguments.insert(p_index, arg);
 	else
@@ -234,7 +238,7 @@ void VisualScriptFunction::set_argument_type(int p_argidx, Variant::Type p_type)
 
 	ERR_FAIL_INDEX(p_argidx, arguments.size());
 
-	arguments[p_argidx].type = p_type;
+	arguments.write[p_argidx].type = p_type;
 	ports_changed_notify();
 }
 Variant::Type VisualScriptFunction::get_argument_type(int p_argidx) const {
@@ -246,7 +250,7 @@ void VisualScriptFunction::set_argument_name(int p_argidx, const String &p_name)
 
 	ERR_FAIL_INDEX(p_argidx, arguments.size());
 
-	arguments[p_argidx].name = p_name;
+	arguments.write[p_argidx].name = p_name;
 	ports_changed_notify();
 }
 String VisualScriptFunction::get_argument_name(int p_argidx) const {
@@ -849,7 +853,7 @@ public:
 
 	virtual int step(const Variant **p_inputs, Variant **p_outputs, StartMode p_start_mode, Variant *p_working_mem, Variant::CallError &r_error, String &r_error_str) {
 
-		if (instance->get_variable(variable, p_outputs[0]) == false) {
+		if (!instance->get_variable(variable, p_outputs[0])) {
 			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 			r_error_str = RTR("VariableGet not found in script: ") + "'" + String(variable) + "'";
 			return false;
@@ -971,7 +975,7 @@ public:
 
 	virtual int step(const Variant **p_inputs, Variant **p_outputs, StartMode p_start_mode, Variant *p_working_mem, Variant::CallError &r_error, String &r_error_str) {
 
-		if (instance->set_variable(variable, *p_inputs[0]) == false) {
+		if (!instance->set_variable(variable, *p_inputs[0])) {
 
 			r_error.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
 			r_error_str = RTR("VariableSet not found in script: ") + "'" + String(variable) + "'";
@@ -1659,7 +1663,7 @@ Variant::Type VisualScriptBasicTypeConstant::get_basic_type() const {
 
 class VisualScriptNodeInstanceBasicTypeConstant : public VisualScriptNodeInstance {
 public:
-	int value;
+	Variant value;
 	bool valid;
 	//virtual int get_working_memory_size() const { return 0; }
 
@@ -1678,7 +1682,7 @@ public:
 VisualScriptNodeInstance *VisualScriptBasicTypeConstant::instance(VisualScriptInstance *p_instance) {
 
 	VisualScriptNodeInstanceBasicTypeConstant *instance = memnew(VisualScriptNodeInstanceBasicTypeConstant);
-	instance->value = Variant::get_numeric_constant_value(type, name, &instance->valid);
+	instance->value = Variant::get_constant_value(type, name, &instance->valid);
 	return instance;
 }
 
@@ -1687,7 +1691,7 @@ void VisualScriptBasicTypeConstant::_validate_property(PropertyInfo &property) c
 	if (property.name == "constant") {
 
 		List<StringName> constants;
-		Variant::get_numeric_constants_for_type(type, &constants);
+		Variant::get_constants_for_type(type, &constants);
 
 		if (constants.size() == 0) {
 			property.usage = 0;
@@ -2198,7 +2202,7 @@ PropertyInfo VisualScriptSceneTree::get_input_value_port_info(int p_idx) const {
 
 PropertyInfo VisualScriptSceneTree::get_output_value_port_info(int p_idx) const {
 
-	return PropertyInfo(Variant::OBJECT, "Scene Tree");
+	return PropertyInfo(Variant::OBJECT, "Scene Tree", PROPERTY_HINT_TYPE_STRING, "SceneTree");
 }
 
 String VisualScriptSceneTree::get_caption() const {
@@ -3560,8 +3564,8 @@ void VisualScriptDeconstruct::_set_elem_cache(const Array &p_elements) {
 	ERR_FAIL_COND(p_elements.size() % 2 == 1);
 	elements.resize(p_elements.size() / 2);
 	for (int i = 0; i < elements.size(); i++) {
-		elements[i].name = p_elements[i * 2 + 0];
-		elements[i].type = Variant::Type(int(p_elements[i * 2 + 1]));
+		elements.write[i].name = p_elements[i * 2 + 0];
+		elements.write[i].type = Variant::Type(int(p_elements[i * 2 + 1]));
 	}
 }
 
@@ -3606,7 +3610,7 @@ VisualScriptNodeInstance *VisualScriptDeconstruct::instance(VisualScriptInstance
 	instance->instance = p_instance;
 	instance->outputs.resize(elements.size());
 	for (int i = 0; i < elements.size(); i++) {
-		instance->outputs[i] = elements[i].name;
+		instance->outputs.write[i] = elements[i].name;
 	}
 
 	return instance;
@@ -3704,18 +3708,18 @@ void register_visual_script_nodes() {
 		for (List<MethodInfo>::Element *E = constructors.front(); E; E = E->next()) {
 
 			if (E->get().arguments.size() > 0) {
-
-				String name = "functions/constructors/" + Variant::get_type_name(Variant::Type(i)) + " ( ";
+				String name = "functions/constructors/" + Variant::get_type_name(Variant::Type(i)) + "(";
 				for (int j = 0; j < E->get().arguments.size(); j++) {
-					if (j > 0)
+					if (j > 0) {
 						name += ", ";
-					if (E->get().arguments.size() == 1)
+					}
+					if (E->get().arguments.size() == 1) {
 						name += Variant::get_type_name(E->get().arguments[j].type);
-					else
+					} else {
 						name += E->get().arguments[j].name;
+					}
 				}
-				name += ") ";
-
+				name += ")";
 				VisualScriptLanguage::singleton->add_register_func(name, create_constructor_node);
 				Pair<Variant::Type, MethodInfo> pair;
 				pair.first = Variant::Type(i);

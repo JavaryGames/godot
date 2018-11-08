@@ -81,6 +81,9 @@ private:
 	HScrollBar *h_scroll;
 	VScrollBar *v_scroll;
 
+	float port_grab_distance_horizontal;
+	float port_grab_distance_vertical;
+
 	bool connecting;
 	String connecting_from;
 	bool connecting_out;
@@ -91,7 +94,7 @@ private:
 	Vector2 connecting_to;
 	String connecting_target_to;
 	int connecting_target_index;
-	bool just_disconected;
+	bool just_disconnected;
 
 	bool dragging;
 	bool just_selected;
@@ -127,6 +130,9 @@ private:
 	Control *connections_layer;
 	GraphEditFilter *top_layer;
 	void _top_layer_input(const Ref<InputEvent> &p_ev);
+
+	bool is_in_hot_zone(const Vector2 &pos, const Vector2 &p_mouse_pos);
+
 	void _top_layer_draw();
 	void _connections_layer_draw();
 	void _update_scroll_offset();
@@ -165,6 +171,8 @@ private:
 	bool _filter_input(const Point2 &p_point);
 	void _snap_toggled();
 	void _snap_value_changed(double);
+
+	bool _check_clickable_control(Control *p_control, const Vector2 &pos);
 
 protected:
 	static void _bind_methods();

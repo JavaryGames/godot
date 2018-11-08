@@ -30,6 +30,7 @@
 #ifndef JAVASCRIPT_ENABLED
 
 #include "lws_peer.h"
+
 #include "core/io/ip.h"
 
 // Needed for socket_helpers on Android at least. UNIXes has it, just include if not windows
@@ -38,9 +39,13 @@
 #include <sys/socket.h>
 #endif
 
-#include "drivers/unix/socket_helpers.h"
+#include "drivers/unix/net_socket_posix.h"
 
 void LWSPeer::set_wsi(struct lws *p_wsi) {
+	ERR_FAIL_COND(wsi != NULL);
+
+	rbw.resize(16);
+	rbr.resize(16);
 	wsi = p_wsi;
 };
 
@@ -56,25 +61,24 @@ Error LWSPeer::read_wsi(void *in, size_t len) {
 
 	ERR_FAIL_COND_V(!is_connected_to_host(), FAILED);
 
-	PeerData *peer_data = (PeerData *)(lws_wsi_user(wsi));
-	uint32_t size = peer_data->in_size;
+	uint32_t size = in_size;
 	uint8_t is_string = lws_frame_is_binary(wsi) ? 0 : 1;
 
-	if (peer_data->rbr.space_left() < len + 5) {
+	if (rbr.space_left() < len + 5) {
 		ERR_EXPLAIN("Buffer full! Dropping data");
 		ERR_FAIL_V(FAILED);
 	}
 
-	copymem(&(peer_data->input_buffer[size]), in, len);
+	copymem(&(input_buffer[size]), in, len);
 	size += len;
 
-	peer_data->in_size = size;
+	in_size = size;
 	if (lws_is_final_fragment(wsi)) {
-		peer_data->rbr.write((uint8_t *)&size, 4);
-		peer_data->rbr.write((uint8_t *)&is_string, 1);
-		peer_data->rbr.write(peer_data->input_buffer, size);
-		peer_data->in_count++;
-		peer_data->in_size = 0;
+		rbr.write((uint8_t *)&size, 4);
+		rbr.write((uint8_t *)&is_string, 1);
+		rbr.write(input_buffer, size);
+		in_count++;
+		in_size = 0;
 	}
 
 	return OK;
@@ -84,28 +88,27 @@ Error LWSPeer::write_wsi() {
 
 	ERR_FAIL_COND_V(!is_connected_to_host(), FAILED);
 
-	PeerData *peer_data = (PeerData *)(lws_wsi_user(wsi));
 	PoolVector<uint8_t> tmp;
-	int left = peer_data->rbw.data_left();
+	int left = rbw.data_left();
 	uint32_t to_write = 0;
 
-	if (left == 0 || peer_data->out_count == 0)
+	if (left == 0 || out_count == 0)
 		return OK;
 
-	peer_data->rbw.read((uint8_t *)&to_write, 4);
-	peer_data->out_count--;
+	rbw.read((uint8_t *)&to_write, 4);
+	out_count--;
 
 	if (left < to_write) {
-		peer_data->rbw.advance_read(left);
+		rbw.advance_read(left);
 		return FAILED;
 	}
 
 	tmp.resize(LWS_PRE + to_write);
-	peer_data->rbw.read(&(tmp.write()[LWS_PRE]), to_write);
+	rbw.read(&(tmp.write()[LWS_PRE]), to_write);
 	lws_write(wsi, &(tmp.write()[LWS_PRE]), to_write, (enum lws_write_protocol)write_mode);
 	tmp.resize(0);
 
-	if (peer_data->out_count > 0)
+	if (out_count > 0)
 		lws_callback_on_writable(wsi); // we want to write more!
 
 	return OK;
@@ -115,10 +118,9 @@ Error LWSPeer::put_packet(const uint8_t *p_buffer, int p_buffer_size) {
 
 	ERR_FAIL_COND_V(!is_connected_to_host(), FAILED);
 
-	PeerData *peer_data = (PeerData *)lws_wsi_user(wsi);
-	peer_data->rbw.write((uint8_t *)&p_buffer_size, 4);
-	peer_data->rbw.write(p_buffer, MIN(p_buffer_size, peer_data->rbw.space_left()));
-	peer_data->out_count++;
+	rbw.write((uint8_t *)&p_buffer_size, 4);
+	rbw.write(p_buffer, MIN(p_buffer_size, rbw.space_left()));
+	out_count++;
 
 	lws_callback_on_writable(wsi); // notify that we want to write
 	return OK;
@@ -128,9 +130,7 @@ Error LWSPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 
 	ERR_FAIL_COND_V(!is_connected_to_host(), FAILED);
 
-	PeerData *peer_data = (PeerData *)lws_wsi_user(wsi);
-
-	if (peer_data->in_count == 0)
+	if (in_count == 0)
 		return ERR_UNAVAILABLE;
 
 	uint32_t to_read = 0;
@@ -138,17 +138,17 @@ Error LWSPeer::get_packet(const uint8_t **r_buffer, int &r_buffer_size) {
 	uint8_t is_string = 0;
 	r_buffer_size = 0;
 
-	peer_data->rbr.read((uint8_t *)&to_read, 4);
-	peer_data->in_count--;
-	left = peer_data->rbr.data_left();
+	rbr.read((uint8_t *)&to_read, 4);
+	in_count--;
+	left = rbr.data_left();
 
 	if (left < to_read + 1) {
-		peer_data->rbr.advance_read(left);
+		rbr.advance_read(left);
 		return FAILED;
 	}
 
-	peer_data->rbr.read(&is_string, 1);
-	peer_data->rbr.read(packet_buffer, to_read);
+	rbr.read(&is_string, 1);
+	rbr.read(packet_buffer, to_read);
 	*r_buffer = packet_buffer;
 	r_buffer_size = to_read;
 	_was_string = is_string;
@@ -161,7 +161,7 @@ int LWSPeer::get_available_packet_count() const {
 	if (!is_connected_to_host())
 		return 0;
 
-	return ((PeerData *)lws_wsi_user(wsi))->in_count;
+	return in_count;
 };
 
 bool LWSPeer::was_string_packet() const {
@@ -174,14 +174,57 @@ bool LWSPeer::is_connected_to_host() const {
 	return wsi != NULL;
 };
 
-void LWSPeer::close() {
+String LWSPeer::get_close_reason(void *in, size_t len, int &r_code) {
+	String s;
+	r_code = 0;
+	if (len < 2) // From docs this should not happen
+		return s;
+
+	const uint8_t *b = (const uint8_t *)in;
+	r_code = b[0] << 8 | b[1];
+
+	if (len > 2) {
+		const char *utf8 = (const char *)&b[2];
+		s.parse_utf8(utf8, len - 2);
+	}
+	return s;
+}
+
+void LWSPeer::send_close_status(struct lws *p_wsi) {
+	if (close_code == -1)
+		return;
+
+	int len = close_reason.size();
+	ERR_FAIL_COND(len > 123); // Maximum allowed reason size in bytes
+
+	lws_close_status code = (lws_close_status)close_code;
+	unsigned char *reason = len > 0 ? (unsigned char *)close_reason.utf8().ptrw() : NULL;
+
+	lws_close_reason(p_wsi, code, reason, len);
+
+	close_code = -1;
+	close_reason = "";
+}
+
+void LWSPeer::close(int p_code, String p_reason) {
 	if (wsi != NULL) {
-		struct lws *tmp = wsi;
+		close_code = p_code;
+		close_reason = p_reason;
 		PeerData *data = ((PeerData *)lws_wsi_user(wsi));
 		data->force_close = true;
-		wsi = NULL;
-		lws_callback_on_writable(tmp); // notify that we want to disconnect
+		data->clean_close = true;
+		lws_callback_on_writable(wsi); // Notify that we want to disconnect
+	} else {
+		close_code = -1;
+		close_reason = "";
 	}
+	wsi = NULL;
+	rbw.resize(0);
+	rbr.resize(0);
+	in_count = 0;
+	in_size = 0;
+	out_count = 0;
+	_was_string = false;
 };
 
 IP_Address LWSPeer::get_connected_host() const {
@@ -189,7 +232,7 @@ IP_Address LWSPeer::get_connected_host() const {
 	ERR_FAIL_COND_V(!is_connected_to_host(), IP_Address());
 
 	IP_Address ip;
-	int port = 0;
+	uint16_t port = 0;
 
 	struct sockaddr_storage addr;
 	socklen_t len = sizeof(addr);
@@ -200,7 +243,7 @@ IP_Address LWSPeer::get_connected_host() const {
 	int ret = getpeername(fd, (struct sockaddr *)&addr, &len);
 	ERR_FAIL_COND_V(ret != 0, IP_Address());
 
-	_set_ip_addr_port(ip, port, &addr);
+	NetSocketPosix::_set_ip_port(&addr, ip, port);
 
 	return ip;
 };
@@ -210,7 +253,7 @@ uint16_t LWSPeer::get_connected_port() const {
 	ERR_FAIL_COND_V(!is_connected_to_host(), 0);
 
 	IP_Address ip;
-	int port = 0;
+	uint16_t port = 0;
 
 	struct sockaddr_storage addr;
 	socklen_t len = sizeof(addr);
@@ -221,15 +264,15 @@ uint16_t LWSPeer::get_connected_port() const {
 	int ret = getpeername(fd, (struct sockaddr *)&addr, &len);
 	ERR_FAIL_COND_V(ret != 0, 0);
 
-	_set_ip_addr_port(ip, port, &addr);
+	NetSocketPosix::_set_ip_port(&addr, ip, port);
 
 	return port;
 };
 
 LWSPeer::LWSPeer() {
 	wsi = NULL;
-	_was_string = false;
 	write_mode = WRITE_MODE_BINARY;
+	close();
 };
 
 LWSPeer::~LWSPeer() {

@@ -31,16 +31,23 @@
 #ifndef RASTERIZERSTORAGEGLES3_H
 #define RASTERIZERSTORAGEGLES3_H
 
-#include "self_list.h"
+#include "core/self_list.h"
 #include "servers/visual/rasterizer.h"
 #include "servers/visual/shader_language.h"
 #include "shader_compiler_gles3.h"
 #include "shader_gles3.h"
+
 #include "shaders/blend_shape.glsl.gen.h"
 #include "shaders/canvas.glsl.gen.h"
 #include "shaders/copy.glsl.gen.h"
 #include "shaders/cubemap_filter.glsl.gen.h"
 #include "shaders/particles.glsl.gen.h"
+
+// WebGL 2.0 has no MapBufferRange/UnmapBuffer, but offers a non-ES style BufferSubData API instead.
+#ifdef __EMSCRIPTEN__
+void glGetBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, GLvoid *data);
+void glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data);
+#endif
 
 class RasterizerCanvasGLES3;
 class RasterizerSceneGLES3;
@@ -122,6 +129,8 @@ public:
 		GLuint black_tex;
 		GLuint normal_tex;
 		GLuint aniso_tex;
+
+		GLuint white_tex_3d;
 
 		GLuint quadie;
 		GLuint quadie_array;
@@ -248,9 +257,10 @@ public:
 
 		String path;
 		uint32_t flags;
-		int width, height;
-		int alloc_width, alloc_height;
+		int width, height, depth;
+		int alloc_width, alloc_height, alloc_depth;
 		Image::Format format;
+		VS::TextureType type;
 
 		GLenum target;
 		GLenum gl_format_cache;
@@ -274,7 +284,7 @@ public:
 
 		RenderTarget *render_target;
 
-		Ref<Image> images[6];
+		Vector<Ref<Image> > images;
 
 		VisualServer::TextureDetectCallback detect_3d;
 		void *detect_3d_ud;
@@ -337,20 +347,22 @@ public:
 
 	mutable RID_Owner<Texture> texture_owner;
 
-	Ref<Image> _get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type, bool &r_compressed, bool &srgb);
+	Ref<Image> _get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, Image::Format &r_real_format, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type, bool &r_compressed, bool &srgb) const;
 
 	virtual RID texture_create();
-	virtual void texture_allocate(RID p_texture, int p_width, int p_height, Image::Format p_format, uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT);
-	virtual void texture_set_data(RID p_texture, const Ref<Image> &p_image, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT);
-	virtual void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT);
-	virtual Ref<Image> texture_get_data(RID p_texture, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) const;
+	virtual void texture_allocate(RID p_texture, int p_width, int p_height, int p_depth_3d, Image::Format p_format, VS::TextureType p_type, uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT);
+	virtual void texture_set_data(RID p_texture, const Ref<Image> &p_image, int p_layer = 0);
+	virtual void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, int p_layer = 0);
+	virtual Ref<Image> texture_get_data(RID p_texture, int p_layer = 0) const;
 	virtual void texture_set_flags(RID p_texture, uint32_t p_flags);
 	virtual uint32_t texture_get_flags(RID p_texture) const;
 	virtual Image::Format texture_get_format(RID p_texture) const;
+	virtual VS::TextureType texture_get_type(RID p_texture) const;
 	virtual uint32_t texture_get_texid(RID p_texture) const;
 	virtual uint32_t texture_get_width(RID p_texture) const;
 	virtual uint32_t texture_get_height(RID p_texture) const;
-	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height);
+	virtual uint32_t texture_get_depth(RID p_texture) const;
+	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height, int p_depth);
 
 	virtual void texture_set_path(RID p_texture, const String &p_path);
 	virtual String texture_get_path(RID p_texture) const;
@@ -410,6 +422,7 @@ public:
 
 		Map<StringName, RID> default_textures;
 
+		Vector<ShaderLanguage::DataType> texture_types;
 		Vector<ShaderLanguage::ShaderNode::Uniform::Hint> texture_hints;
 
 		bool valid;
@@ -436,6 +449,7 @@ public:
 			};
 
 			int light_mode;
+
 			bool uses_screen_texture;
 			bool uses_screen_uv;
 			bool uses_time;
@@ -532,6 +546,7 @@ public:
 		Map<StringName, Variant> params;
 		SelfList<Material> list;
 		SelfList<Material> dirty_list;
+		Vector<bool> texture_is_3d;
 		Vector<RID> textures;
 		float line_width;
 		int render_priority;
@@ -575,6 +590,7 @@ public:
 
 	virtual void material_set_param(RID p_material, const StringName &p_param, const Variant &p_value);
 	virtual Variant material_get_param(RID p_material, const StringName &p_param) const;
+	virtual Variant material_get_param_default(RID p_material, const StringName &p_param) const;
 
 	virtual void material_set_line_width(RID p_material, float p_width);
 	virtual void material_set_next_pass(RID p_material, RID p_next_material);
@@ -682,7 +698,7 @@ public:
 		}
 	};
 
-	class MultiMesh;
+	struct MultiMesh;
 
 	struct Mesh : public GeometryOwner {
 
@@ -693,7 +709,6 @@ public:
 		AABB custom_aabb;
 		mutable uint64_t last_pass;
 		SelfList<MultiMesh>::List multimeshes;
-
 		_FORCE_INLINE_ void update_multimeshes() {
 
 			SelfList<MultiMesh> *mm = multimeshes.first();
@@ -997,6 +1012,7 @@ public:
 	virtual void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable);
 	virtual void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable);
 	virtual void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers);
+	virtual void reflection_probe_set_resolution(RID p_probe, int p_resolution);
 
 	virtual AABB reflection_probe_get_aabb(RID p_probe) const;
 	virtual VS::ReflectionProbeUpdateMode reflection_probe_get_update_mode(RID p_probe) const;
@@ -1428,7 +1444,6 @@ public:
 		int canvas_draw_commands;
 		float time[4];
 		float delta;
-		uint64_t prev_tick;
 		uint64_t count;
 
 	} frame;

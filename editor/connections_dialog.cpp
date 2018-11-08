@@ -30,10 +30,10 @@
 
 #include "connections_dialog.h"
 
+#include "core/print_string.h"
 #include "editor_node.h"
 #include "editor_settings.h"
 #include "plugins/script_editor_plugin.h"
-#include "print_string.h"
 #include "scene/gui/label.h"
 #include "scene/gui/popup_menu.h"
 
@@ -51,7 +51,7 @@ public:
 		if (name.begins_with("bind/")) {
 			int which = name.get_slice("/", 1).to_int() - 1;
 			ERR_FAIL_INDEX_V(which, params.size(), false);
-			params[which] = p_value;
+			params.write[which] = p_value;
 		} else
 			return false;
 
@@ -341,8 +341,7 @@ ConnectDialog::ConnectDialog() {
 
 	vbc_right->add_margin_child(TTR("Add Extra Call Argument:"), add_bind_hb);
 
-	bind_editor = memnew(PropertyEditor);
-	bind_editor->hide_top_label();
+	bind_editor = memnew(EditorInspector);
 
 	vbc_right->add_margin_child(TTR("Extra Call Arguments:"), bind_editor, true);
 
@@ -433,6 +432,9 @@ void ConnectionsDock::_make_or_edit_connection() {
 	if (add_script_function) {
 		// pick up args here before "it" is deleted by update_tree
 		script_function_args = it->get_metadata(0).operator Dictionary()["args"];
+		for (int i = 0; i < cToMake.binds.size(); i++) {
+			script_function_args.append("extra_arg_" + itos(i));
+		}
 	}
 
 	if (connect_dialog->is_editing()) {
@@ -498,7 +500,7 @@ void ConnectionsDock::_disconnect(TreeItem &item) {
 }
 
 /*
-Break all conections of currently selected signal.
+Break all connections of currently selected signal.
 Can undo-redo as a single action.
 */
 void ConnectionsDock::_disconnect_all() {
@@ -650,8 +652,8 @@ void ConnectionsDock::_handle_signal_menu_option(int option) {
 			_open_connection_dialog(*item);
 		} break;
 		case DISCONNECT_ALL: {
-			StringName signalName = item->get_metadata(0).operator Dictionary()["name"];
-			disconnect_all_dialog->set_text(TTR("Are you sure you want to remove all connections from the \"") + signalName + "\" signal?");
+			StringName signal_name = item->get_metadata(0).operator Dictionary()["name"];
+			disconnect_all_dialog->set_text(vformat(TTR("Are you sure you want to remove all connections from the \"%s\" signal?"), signal_name));
 			disconnect_all_dialog->popup_centered();
 		} break;
 	}
@@ -820,7 +822,9 @@ void ConnectionsDock::update_tree() {
 					if (i > 0)
 						signaldesc += ", ";
 					String tname = "var";
-					if (pi.type != Variant::NIL) {
+					if (pi.type == Variant::OBJECT && pi.class_name != StringName()) {
+						tname = pi.class_name.operator String();
+					} else if (pi.type != Variant::NIL) {
 						tname = Variant::get_type_name(pi.type);
 					}
 					signaldesc += tname + " " + (pi.name == "" ? String("arg " + itos(i)) : pi.name);

@@ -27,15 +27,15 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
+
 #ifndef RASTERIZER_DUMMY_H
 #define RASTERIZER_DUMMY_H
 
-#include "camera_matrix.h"
+#include "core/math/camera_matrix.h"
+#include "core/self_list.h"
 #include "scene/resources/mesh.h"
 #include "servers/visual/rasterizer.h"
 #include "servers/visual_server.h"
-
-#include "self_list.h"
 
 class RasterizerSceneDummy : public RasterizerScene {
 public:
@@ -154,7 +154,8 @@ public:
 		ERR_FAIL_COND_V(!texture, RID());
 		return texture_owner.make_rid(texture);
 	}
-	void texture_allocate(RID p_texture, int p_width, int p_height, Image::Format p_format, uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT) {
+
+	void texture_allocate(RID p_texture, int p_width, int p_height, int p_depth_3d, Image::Format p_format, VisualServer::TextureType p_type = VS::TEXTURE_TYPE_2D, uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT) {
 		DummyTexture *t = texture_owner.getornull(p_texture);
 		ERR_FAIL_COND(!t);
 		t->width = p_width;
@@ -164,7 +165,7 @@ public:
 		t->image = Ref<Image>(memnew(Image));
 		t->image->create(p_width, p_height, false, p_format);
 	}
-	void texture_set_data(RID p_texture, const Ref<Image> &p_image, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) {
+	void texture_set_data(RID p_texture, const Ref<Image> &p_image, int p_level) {
 		DummyTexture *t = texture_owner.getornull(p_texture);
 		ERR_FAIL_COND(!t);
 		t->width = p_image->get_width();
@@ -173,7 +174,7 @@ public:
 		t->image->create(t->width, t->height, false, t->format, p_image->get_data());
 	}
 
-	void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, VS::CubeMapSide p_cube_side) {
+	void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, int p_level) {
 		DummyTexture *t = texture_owner.get(p_texture);
 
 		ERR_FAIL_COND(!t);
@@ -186,7 +187,7 @@ public:
 		t->image->blit_rect(p_image, Rect2(src_x, src_y, src_w, src_h), Vector2(dst_x, dst_y));
 	}
 
-	Ref<Image> texture_get_data(RID p_texture, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) const {
+	Ref<Image> texture_get_data(RID p_texture, int p_level) const {
 		DummyTexture *t = texture_owner.getornull(p_texture);
 		ERR_FAIL_COND_V(!t, Ref<Image>());
 		return t->image;
@@ -206,10 +207,13 @@ public:
 		ERR_FAIL_COND_V(!t, Image::FORMAT_RGB8);
 		return t->format;
 	}
+
+	VisualServer::TextureType texture_get_type(RID p_texture) const { return VS::TEXTURE_TYPE_2D; }
 	uint32_t texture_get_texid(RID p_texture) const { return 0; }
 	uint32_t texture_get_width(RID p_texture) const { return 0; }
 	uint32_t texture_get_height(RID p_texture) const { return 0; }
-	void texture_set_size_override(RID p_texture, int p_width, int p_height) {}
+	uint32_t texture_get_depth(RID p_texture) const { return 0; }
+	void texture_set_size_override(RID p_texture, int p_width, int p_height, int p_depth_3d) {}
 
 	void texture_set_path(RID p_texture, const String &p_path) {
 		DummyTexture *t = texture_owner.getornull(p_texture);
@@ -263,6 +267,7 @@ public:
 
 	void material_set_param(RID p_material, const StringName &p_param, const Variant &p_value) {}
 	Variant material_get_param(RID p_material, const StringName &p_param) const { return Variant(); }
+	Variant material_get_param_default(RID p_material, const StringName &p_param) const { return Variant(); }
 
 	void material_set_line_width(RID p_material, float p_width) {}
 
@@ -289,7 +294,7 @@ public:
 		ERR_FAIL_COND(!m);
 
 		m->surfaces.push_back(DummySurface());
-		DummySurface *s = &m->surfaces[m->surfaces.size() - 1];
+		DummySurface *s = &m->surfaces.write[m->surfaces.size() - 1];
 		s->format = p_format;
 		s->primitive = p_primitive;
 		s->array = p_array;
@@ -512,6 +517,7 @@ public:
 	void reflection_probe_set_enable_box_projection(RID p_probe, bool p_enable) {}
 	void reflection_probe_set_enable_shadows(RID p_probe, bool p_enable) {}
 	void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers) {}
+	void reflection_probe_set_resolution(RID p_probe, int p_resolution) {}
 
 	AABB reflection_probe_get_aabb(RID p_probe) const { return AABB(); }
 	VS::ReflectionProbeUpdateMode reflection_probe_get_update_mode(RID p_probe) const { return VisualServer::REFLECTION_PROBE_UPDATE_ONCE; }
@@ -777,13 +783,18 @@ public:
 	void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale) {}
 
 	void initialize() {}
-	void begin_frame() {}
+	void begin_frame(double frame_step) {}
 	void set_current_render_target(RID p_render_target) {}
 	void restore_render_target() {}
 	void clear_render_target(const Color &p_color) {}
 	void blit_render_target_to_screen(RID p_render_target, const Rect2 &p_screen_rect, int p_screen = 0) {}
+	void output_lens_distorted_to_screen(RID p_render_target, const Rect2 &p_screen_rect, float p_k1, float p_k2, const Vector2 &p_eye_center, float p_oversample) {}
 	void end_frame(bool p_swap_buffers) {}
 	void finalize() {}
+
+	static Error is_viable() {
+		return OK;
+	}
 
 	static Rasterizer *_create_current() {
 		return memnew(RasterizerDummy);
@@ -792,6 +803,8 @@ public:
 	static void make_current() {
 		_create_func = _create_current;
 	}
+
+	virtual bool is_low_end() const { return true; }
 
 	RasterizerDummy() {}
 	~RasterizerDummy() {}

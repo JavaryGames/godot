@@ -161,8 +161,6 @@ CSGBrush *CSGShape::_get_brush() {
 
 void CSGShape::_update_shape() {
 
-	//print_line("updating shape for " + String(get_path()));
-
 	if (parent)
 		return;
 
@@ -177,7 +175,7 @@ void CSGShape::_update_shape() {
 	Vector<int> face_count;
 	face_count.resize(n->materials.size() + 1);
 	for (int i = 0; i < face_count.size(); i++) {
-		face_count[i] = 0;
+		face_count.write[i] = 0;
 	}
 
 	for (int i = 0; i < n->faces.size(); i++) {
@@ -200,7 +198,7 @@ void CSGShape::_update_shape() {
 			}
 		}
 
-		face_count[idx]++;
+		face_count.write[idx]++;
 	}
 
 	Vector<ShapeUpdateSurface> surfaces;
@@ -210,18 +208,18 @@ void CSGShape::_update_shape() {
 	//create arrays
 	for (int i = 0; i < surfaces.size(); i++) {
 
-		surfaces[i].vertices.resize(face_count[i] * 3);
-		surfaces[i].normals.resize(face_count[i] * 3);
-		surfaces[i].uvs.resize(face_count[i] * 3);
-		surfaces[i].last_added = 0;
+		surfaces.write[i].vertices.resize(face_count[i] * 3);
+		surfaces.write[i].normals.resize(face_count[i] * 3);
+		surfaces.write[i].uvs.resize(face_count[i] * 3);
+		surfaces.write[i].last_added = 0;
 
 		if (i != surfaces.size() - 1) {
-			surfaces[i].material = n->materials[i];
+			surfaces.write[i].material = n->materials[i];
 		}
 
-		surfaces[i].verticesw = surfaces[i].vertices.write();
-		surfaces[i].normalsw = surfaces[i].normals.write();
-		surfaces[i].uvsw = surfaces[i].uvs.write();
+		surfaces.write[i].verticesw = surfaces.write[i].vertices.write();
+		surfaces.write[i].normalsw = surfaces.write[i].normals.write();
+		surfaces.write[i].uvsw = surfaces.write[i].uvs.write();
 	}
 
 	//fill arrays
@@ -281,7 +279,7 @@ void CSGShape::_update_shape() {
 				surfaces[idx].normalsw[last + order[j]] = normal;
 			}
 
-			surfaces[idx].last_added += 3;
+			surfaces.write[idx].last_added += 3;
 		}
 	}
 
@@ -290,9 +288,9 @@ void CSGShape::_update_shape() {
 
 	for (int i = 0; i < surfaces.size(); i++) {
 
-		surfaces[i].verticesw = PoolVector<Vector3>::Write();
-		surfaces[i].normalsw = PoolVector<Vector3>::Write();
-		surfaces[i].uvsw = PoolVector<Vector2>::Write();
+		surfaces.write[i].verticesw = PoolVector<Vector3>::Write();
+		surfaces.write[i].normalsw = PoolVector<Vector3>::Write();
+		surfaces.write[i].uvsw = PoolVector<Vector2>::Write();
 
 		if (surfaces[i].last_added == 0)
 			continue;
@@ -372,7 +370,6 @@ void CSGShape::_notification(int p_what) {
 
 	if (p_what == NOTIFICATION_LOCAL_TRANSFORM_CHANGED) {
 
-		//print_line("local xform changed");
 		if (parent) {
 			parent->_make_dirty();
 		}
@@ -524,6 +521,11 @@ CSGBrush *CSGMesh::_build_brush() {
 
 		Array arrays = mesh->surface_get_arrays(i);
 
+		if (arrays.size() == 0) {
+			_make_dirty();
+			ERR_FAIL_COND_V(arrays.size() == 0, NULL);
+		}
+
 		PoolVector<Vector3> avertices = arrays[Mesh::ARRAY_VERTEX];
 		if (avertices.size() == 0)
 			continue;
@@ -596,8 +598,8 @@ CSGBrush *CSGMesh::_build_brush() {
 				mw[j / 3] = mat;
 			}
 		} else {
-			int is = vertices.size();
-			int as = avertices.size();
+			int as = vertices.size();
+			int is = avertices.size();
 
 			vertices.resize(as + is);
 			smooth.resize((as + is) / 3);
@@ -641,7 +643,6 @@ CSGBrush *CSGMesh::_build_brush() {
 		}
 	}
 
-	//print_line("total vertices? " + itos(vertices.size()));
 	if (vertices.size() == 0)
 		return NULL;
 
@@ -921,7 +922,7 @@ CSGBrush *CSGBox::_build_brush() {
 
 		int face = 0;
 
-		Vector3 vertex_mul(width, height, depth);
+		Vector3 vertex_mul(width * 0.5, height * 0.5, depth * 0.5);
 
 		{
 
@@ -1055,9 +1056,9 @@ Ref<Material> CSGBox::get_material() const {
 
 CSGBox::CSGBox() {
 	// defaults
-	width = 1.0;
-	height = 1.0;
-	depth = 1.0;
+	width = 2.0;
+	height = 2.0;
+	depth = 2.0;
 }
 
 ///////////////
@@ -1577,7 +1578,7 @@ CSGBrush *CSGPolygon::_build_brush() {
 	}
 	CSGBrush *brush = memnew(CSGBrush);
 
-	int face_count;
+	int face_count = 0;
 
 	switch (mode) {
 		case MODE_DEPTH: face_count = triangles.size() * 2 / 3 + (final_polygon.size()) * 2; break;

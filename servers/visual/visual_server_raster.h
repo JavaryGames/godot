@@ -31,8 +31,8 @@
 #ifndef VISUAL_SERVER_RASTER_H
 #define VISUAL_SERVER_RASTER_H
 
-#include "allocators.h"
-#include "octree.h"
+#include "core/allocators.h"
+#include "core/math/octree.h"
 #include "servers/visual/rasterizer.h"
 #include "servers/visual_server.h"
 #include "visual_server_canvas.h"
@@ -59,7 +59,6 @@ class VisualServerRaster : public VisualServer {
 	};
 
 	static int changes;
-	bool draw_extra_frame;
 	RID test_cube;
 
 	int black_margin[4];
@@ -148,17 +147,19 @@ public:
 	/* TEXTURE API */
 
 	BIND0R(RID, texture_create)
-	BIND5(texture_allocate, RID, int, int, Image::Format, uint32_t)
-	BIND3(texture_set_data, RID, const Ref<Image> &, CubeMapSide)
-	BIND10(texture_set_data_partial, RID, const Ref<Image> &, int, int, int, int, int, int, int, CubeMapSide)
-	BIND2RC(Ref<Image>, texture_get_data, RID, CubeMapSide)
+	BIND7(texture_allocate, RID, int, int, int, Image::Format, TextureType, uint32_t)
+	BIND3(texture_set_data, RID, const Ref<Image> &, int)
+	BIND10(texture_set_data_partial, RID, const Ref<Image> &, int, int, int, int, int, int, int, int)
+	BIND2RC(Ref<Image>, texture_get_data, RID, int)
 	BIND2(texture_set_flags, RID, uint32_t)
 	BIND1RC(uint32_t, texture_get_flags, RID)
 	BIND1RC(Image::Format, texture_get_format, RID)
+	BIND1RC(TextureType, texture_get_type, RID)
 	BIND1RC(uint32_t, texture_get_texid, RID)
 	BIND1RC(uint32_t, texture_get_width, RID)
 	BIND1RC(uint32_t, texture_get_height, RID)
-	BIND3(texture_set_size_override, RID, int, int)
+	BIND1RC(uint32_t, texture_get_depth, RID)
+	BIND4(texture_set_size_override, RID, int, int, int)
 
 	BIND3(texture_set_detect_3d_callback, RID, TextureDetectCallback, void *)
 	BIND3(texture_set_detect_srgb_callback, RID, TextureDetectCallback, void *)
@@ -201,6 +202,7 @@ public:
 
 	BIND3(material_set_param, RID, const StringName &, const Variant &)
 	BIND2RC(Variant, material_get_param, RID, const StringName &)
+	BIND2RC(Variant, material_get_param_default, RID, const StringName &)
 
 	BIND2(material_set_render_priority, RID, int)
 	BIND2(material_set_line_width, RID, float)
@@ -334,6 +336,7 @@ public:
 	BIND2(reflection_probe_set_enable_box_projection, RID, bool)
 	BIND2(reflection_probe_set_enable_shadows, RID, bool)
 	BIND2(reflection_probe_set_cull_mask, RID, uint32_t)
+	BIND2(reflection_probe_set_resolution, RID, int)
 
 	/* BAKED LIGHT API */
 
@@ -471,7 +474,7 @@ public:
 	BIND2(viewport_set_transparent_background, RID, bool)
 
 	BIND2(viewport_set_global_canvas_transform, RID, const Transform2D &)
-	BIND3(viewport_set_canvas_layer, RID, RID, int)
+	BIND4(viewport_set_canvas_stacking, RID, RID, int, int)
 	BIND2(viewport_set_shadow_atlas_size, RID, int)
 	BIND3(viewport_set_shadow_atlas_quadrant_subdivision, RID, int, int)
 	BIND2(viewport_set_msaa, RID, ViewportMSAA)
@@ -572,6 +575,8 @@ public:
 	BIND2(canvas_item_set_visible, RID, bool)
 	BIND2(canvas_item_set_light_mask, RID, int)
 
+	BIND2(canvas_item_set_update_when_visible, RID, bool)
+
 	BIND2(canvas_item_set_transform, RID, const Transform2D &)
 	BIND2(canvas_item_set_clip, RID, bool)
 	BIND2(canvas_item_set_distance_field_mode, RID, bool)
@@ -594,7 +599,7 @@ public:
 	BIND10(canvas_item_add_triangle_array, RID, const Vector<int> &, const Vector<Point2> &, const Vector<Color> &, const Vector<Point2> &, const Vector<int> &, const Vector<float> &, RID, int, RID)
 	BIND4(canvas_item_add_mesh, RID, const RID &, RID, RID)
 	BIND4(canvas_item_add_multimesh, RID, RID, RID, RID)
-	BIND6(canvas_item_add_particles, RID, RID, RID, RID, int, int)
+	BIND4(canvas_item_add_particles, RID, RID, RID, RID)
 	BIND2(canvas_item_add_set_transform, RID, const Transform2D &)
 	BIND2(canvas_item_add_clip_ignore, RID, bool)
 	BIND2(canvas_item_set_sort_children_by_y, RID, bool)
@@ -660,7 +665,7 @@ public:
 
 	virtual void request_frame_drawn_callback(Object *p_where, const StringName &p_method, const Variant &p_userdata);
 
-	virtual void draw(bool p_swap_buffers);
+	virtual void draw(bool p_swap_buffers, double frame_step);
 	virtual void sync();
 	virtual bool has_changed() const;
 	virtual void init();
@@ -683,6 +688,8 @@ public:
 	virtual void set_debug_generate_wireframes(bool p_generate);
 
 	virtual void call_set_use_vsync(bool p_enable);
+
+	virtual bool is_low_end() const;
 
 	VisualServerRaster();
 	~VisualServerRaster();

@@ -31,7 +31,7 @@
 #ifndef VIEWPORT_H
 #define VIEWPORT_H
 
-#include "math_2d.h"
+#include "core/math/transform_2d.h"
 #include "scene/main/node.h"
 #include "scene/resources/texture.h"
 #include "scene/resources/world_2d.h"
@@ -45,6 +45,7 @@ class Camera2D;
 class Listener;
 class Control;
 class CanvasItem;
+class CanvasLayer;
 class Panel;
 class Label;
 class Timer;
@@ -167,6 +168,7 @@ private:
 
 	Camera *camera;
 	Set<Camera *> cameras;
+	Set<CanvasLayer *> canvas_layers;
 
 	RID viewport;
 	RID current_canvas;
@@ -278,6 +280,7 @@ private:
 		bool roots_order_dirty;
 		List<Control *> roots;
 		int canvas_sort_index; //for sorting items with canvas as root
+		bool dragging;
 
 		GUI();	
 		} gui;
@@ -356,6 +359,10 @@ private:
 	bool _camera_add(Camera *p_camera); //true if first
 	void _camera_remove(Camera *p_camera);
 	void _camera_make_next_current(Camera *p_exclude);
+
+	friend class CanvasLayer;
+	void _canvas_layer_add(CanvasLayer *p_canvas_layer);
+	void _canvas_layer_remove(CanvasLayer *p_canvas_layer);
 
 protected:
 	void _notification(int p_what);
@@ -483,6 +490,7 @@ public:
 
 	Ref<Image> get_capture_img();
 	void set_capture_img(Ref<Image> img);
+	bool gui_is_dragging() const;
 
 	Viewport();
 	~Viewport();

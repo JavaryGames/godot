@@ -31,8 +31,8 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
-#include "math_2d.h"
-#include "rid.h"
+#include "core/math/transform_2d.h"
+#include "core/rid.h"
 #include "scene/2d/canvas_item.h"
 #include "scene/gui/shortcut.h"
 #include "scene/main/node.h"
@@ -76,7 +76,7 @@ public:
 		SIZE_EXPAND = 2,
 		SIZE_EXPAND_FILL = SIZE_EXPAND | SIZE_FILL,
 		SIZE_SHRINK_CENTER = 4, //ignored by expand or fill
-		SIZE_SHRINK_END = 8, //ignored by expand or fil
+		SIZE_SHRINK_END = 8, //ignored by expand or fill
 
 	};
 
@@ -182,7 +182,6 @@ private:
 
 		Control *parent;
 		ObjectID drag_owner;
-		bool modal;
 		bool modal_exclusive;
 		uint64_t modal_frame; //frame used to put something as modal
 		Ref<Theme> theme;

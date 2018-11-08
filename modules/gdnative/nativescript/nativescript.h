@@ -31,21 +31,21 @@
 #ifndef NATIVE_SCRIPT_H
 #define NATIVE_SCRIPT_H
 
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/oa_hash_map.h"
+#include "core/ordered_hash_map.h"
+#include "core/os/thread_safe.h"
 #include "core/resource.h"
 #include "core/script_language.h"
 #include "core/self_list.h"
-#include "io/resource_loader.h"
-#include "io/resource_saver.h"
-#include "oa_hash_map.h"
-#include "ordered_hash_map.h"
-#include "os/thread_safe.h"
 #include "scene/main/node.h"
 
 #include "modules/gdnative/gdnative.h"
 #include <nativescript/godot_nativescript.h>
 
 #ifndef NO_THREADS
-#include "os/mutex.h"
+#include "core/os/mutex.h"
 #endif
 
 struct NativeScriptDesc {
@@ -70,8 +70,6 @@ struct NativeScriptDesc {
 		String documentation;
 	};
 
-	String documentation;
-
 	Map<StringName, Method> methods;
 	OrderedHashMap<StringName, Property> properties;
 	Map<StringName, Signal> signals_; // QtCreator doesn't like the name signals
@@ -80,6 +78,8 @@ struct NativeScriptDesc {
 	NativeScriptDesc *base_data;
 	godot_instance_create_func create_func;
 	godot_instance_destroy_func destroy_func;
+
+	String documentation;
 
 	const void *type_tag;
 
@@ -118,6 +118,9 @@ class NativeScript : public Script {
 
 	String class_name;
 
+	String script_class_name;
+	String script_class_icon_path;
+
 #ifndef NO_THREADS
 	Mutex *owners_lock;
 #endif
@@ -134,6 +137,11 @@ public:
 
 	void set_library(Ref<GDNativeLibrary> p_library);
 	Ref<GDNativeLibrary> get_library() const;
+
+	void set_script_class_name(String p_type);
+	String get_script_class_name() const;
+	void set_script_class_icon_path(String p_icon_path);
+	String get_script_class_icon_path() const;
 
 	virtual bool can_instance() const;
 
@@ -246,6 +254,22 @@ private:
 
 	Map<int, HashMap<StringName, const void *> > global_type_tags;
 
+	struct ProfileData {
+		StringName signature;
+		uint64_t call_count;
+		uint64_t self_time;
+		uint64_t total_time;
+		uint64_t frame_call_count;
+		uint64_t frame_self_time;
+		uint64_t frame_total_time;
+		uint64_t last_frame_call_count;
+		uint64_t last_frame_self_time;
+		uint64_t last_frame_total_time;
+	};
+
+	Map<StringName, ProfileData> profile_data;
+	bool profiling;
+
 public:
 	// These two maps must only be touched on the main thread
 	Map<String, Map<StringName, NativeScriptDesc> > library_classes;
@@ -253,18 +277,14 @@ public:
 
 	Map<String, Set<NativeScript *> > library_script_users;
 
-	const StringName _init_call_type = "nativescript_init";
-	const StringName _init_call_name = "nativescript_init";
-
-	const StringName _terminate_call_name = "nativescript_terminate";
-
-	const StringName _noarg_call_type = "nativescript_no_arg";
-
-	const StringName _frame_call_name = "nativescript_frame";
-
+	StringName _init_call_type;
+	StringName _init_call_name;
+	StringName _terminate_call_name;
+	StringName _noarg_call_type;
+	StringName _frame_call_name;
 #ifndef NO_THREADS
-	const StringName _thread_enter_call_name = "nativescript_thread_enter";
-	const StringName _thread_exit_call_name = "nativescript_thread_exit";
+	StringName _thread_enter_call_name;
+	StringName _thread_exit_call_name;
 #endif
 
 	NativeScriptLanguage();
@@ -295,7 +315,7 @@ public:
 	virtual void get_comment_delimiters(List<String> *p_delimiters) const;
 	virtual void get_string_delimiters(List<String> *p_delimiters) const;
 	virtual Ref<Script> get_template(const String &p_class_name, const String &p_base_class_name) const;
-	virtual bool validate(const String &p_script, int &r_line_error, int &r_col_error, String &r_test_error, const String &p_path, List<String> *r_functions) const;
+	virtual bool validate(const String &p_script, int &r_line_error, int &r_col_error, String &r_test_error, const String &p_path, List<String> *r_functions, List<ScriptLanguage::Warning> *r_warnings = NULL, Set<int> *r_safe_lines = NULL) const;
 	virtual Script *create_script() const;
 	virtual bool has_named_classes() const;
 	virtual bool supports_builtin_mode() const;
@@ -329,9 +349,16 @@ public:
 
 	virtual void *alloc_instance_binding_data(Object *p_object);
 	virtual void free_instance_binding_data(void *p_data);
+	virtual void refcount_incremented_instance_binding(Object *p_object);
+	virtual bool refcount_decremented_instance_binding(Object *p_object);
 
 	void set_global_type_tag(int p_idx, StringName p_class_name, const void *p_type_tag);
 	const void *get_global_type_tag(int p_idx, StringName p_class_name) const;
+
+	virtual bool handles_global_class_type(const String &p_type) const;
+	virtual String get_global_class_name(const String &p_path, String *r_base_type, String *r_icon_path) const;
+
+	void profiling_add_data(StringName p_signature, uint64_t p_time);
 };
 
 inline NativeScriptDesc *NativeScript::get_script_desc() const {
@@ -341,11 +368,14 @@ inline NativeScriptDesc *NativeScript::get_script_desc() const {
 
 class NativeReloadNode : public Node {
 	GDCLASS(NativeReloadNode, Node)
-	bool unloaded = false;
+	bool unloaded;
 
 public:
 	static void _bind_methods();
 	void _notification(int p_what);
+
+	NativeReloadNode() :
+			unloaded(false) {}
 };
 
 class ResourceFormatLoaderNativeScript : public ResourceFormatLoader {

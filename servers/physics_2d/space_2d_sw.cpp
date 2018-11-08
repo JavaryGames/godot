@@ -31,15 +31,25 @@
 #include "space_2d_sw.h"
 
 #include "collision_solver_2d_sw.h"
-#include "pair.h"
+#include "core/os/os.h"
+#include "core/pair.h"
 #include "physics_2d_server_sw.h"
+_FORCE_INLINE_ static bool _can_collide_with(CollisionObject2DSW *p_object, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
-_FORCE_INLINE_ static bool _can_collide_with(CollisionObject2DSW *p_object, uint32_t p_collision_mask) {
+	if (!(p_object->get_collision_layer() & p_collision_mask)) {
+		return false;
+	}
 
-	return p_object->get_collision_layer() & p_collision_mask;
+	if (p_object->get_type() == CollisionObject2DSW::TYPE_AREA && !p_collide_with_areas)
+		return false;
+
+	if (p_object->get_type() == CollisionObject2DSW::TYPE_BODY && !p_collide_with_bodies)
+		return false;
+
+	return true;
 }
 
-int Physics2DDirectSpaceStateSW::intersect_point(const Vector2 &p_point, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_pick_point) {
+int Physics2DDirectSpaceStateSW::_intersect_point_impl(const Vector2 &p_point, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, bool p_pick_point, bool p_filter_by_canvas, ObjectID p_canvas_instance_id) {
 
 	if (p_result_max <= 0)
 		return 0;
@@ -54,7 +64,7 @@ int Physics2DDirectSpaceStateSW::intersect_point(const Vector2 &p_point, ShapeRe
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		if (p_exclude.has(space->intersection_query_results[i]->get_self()))
@@ -63,6 +73,9 @@ int Physics2DDirectSpaceStateSW::intersect_point(const Vector2 &p_point, ShapeRe
 		const CollisionObject2DSW *col_obj = space->intersection_query_results[i];
 
 		if (p_pick_point && !col_obj->is_pickable())
+			continue;
+
+		if (p_filter_by_canvas && col_obj->get_canvas_instance_id() != p_canvas_instance_id)
 			continue;
 
 		int shape_idx = space->intersection_query_subindex_results[i];
@@ -90,7 +103,17 @@ int Physics2DDirectSpaceStateSW::intersect_point(const Vector2 &p_point, ShapeRe
 	return cc;
 }
 
-bool Physics2DDirectSpaceStateSW::intersect_ray(const Vector2 &p_from, const Vector2 &p_to, RayResult &r_result, const Set<RID> &p_exclude, uint32_t p_collision_mask) {
+int Physics2DDirectSpaceStateSW::intersect_point(const Vector2 &p_point, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, bool p_pick_point) {
+
+	return _intersect_point_impl(p_point, r_results, p_result_max, p_exclude, p_collision_mask, p_collide_with_bodies, p_collide_with_areas, p_pick_point);
+}
+
+int Physics2DDirectSpaceStateSW::intersect_point_on_canvas(const Vector2 &p_point, ObjectID p_canvas_instance_id, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas, bool p_pick_point) {
+
+	return _intersect_point_impl(p_point, r_results, p_result_max, p_exclude, p_collision_mask, p_collide_with_bodies, p_collide_with_areas, p_pick_point, true, p_canvas_instance_id);
+}
+
+bool Physics2DDirectSpaceStateSW::intersect_ray(const Vector2 &p_from, const Vector2 &p_to, RayResult &r_result, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
 	ERR_FAIL_COND_V(space->locked, false);
 
@@ -102,7 +125,7 @@ bool Physics2DDirectSpaceStateSW::intersect_ray(const Vector2 &p_from, const Vec
 
 	int amount = space->broadphase->cull_segment(begin, end, space->intersection_query_results, Space2DSW::INTERSECTION_QUERY_MAX, space->intersection_query_subindex_results);
 
-	//todo, create another array tha references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
+	//todo, create another array that references results, compute AABBs and check closest point to ray origin, sort, and stop evaluating results when beyond first collision
 
 	bool collided = false;
 	Vector2 res_point, res_normal;
@@ -112,7 +135,7 @@ bool Physics2DDirectSpaceStateSW::intersect_ray(const Vector2 &p_from, const Vec
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		if (p_exclude.has(space->intersection_query_results[i]->get_self()))
@@ -170,7 +193,7 @@ bool Physics2DDirectSpaceStateSW::intersect_ray(const Vector2 &p_from, const Vec
 	return true;
 }
 
-int Physics2DDirectSpaceStateSW::intersect_shape(const RID &p_shape, const Transform2D &p_xform, const Vector2 &p_motion, real_t p_margin, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask) {
+int Physics2DDirectSpaceStateSW::intersect_shape(const RID &p_shape, const Transform2D &p_xform, const Vector2 &p_motion, real_t p_margin, ShapeResult *r_results, int p_result_max, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
 	if (p_result_max <= 0)
 		return 0;
@@ -190,7 +213,7 @@ int Physics2DDirectSpaceStateSW::intersect_shape(const RID &p_shape, const Trans
 		if (cc >= p_result_max)
 			break;
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		if (p_exclude.has(space->intersection_query_results[i]->get_self()))
@@ -215,7 +238,7 @@ int Physics2DDirectSpaceStateSW::intersect_shape(const RID &p_shape, const Trans
 	return cc;
 }
 
-bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transform2D &p_xform, const Vector2 &p_motion, real_t p_margin, real_t &p_closest_safe, real_t &p_closest_unsafe, const Set<RID> &p_exclude, uint32_t p_collision_mask) {
+bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transform2D &p_xform, const Vector2 &p_motion, real_t p_margin, real_t &p_closest_safe, real_t &p_closest_unsafe, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
 	Shape2DSW *shape = Physics2DServerSW::singletonsw->shape_owner.get(p_shape);
 	ERR_FAIL_COND_V(!shape, false);
@@ -224,11 +247,6 @@ bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transfor
 	aabb = aabb.merge(Rect2(aabb.position + p_motion, aabb.size)); //motion
 	aabb = aabb.grow(p_margin);
 
-	/*
-	if (p_motion!=Vector2())
-		print_line(p_motion);
-	*/
-
 	int amount = space->broadphase->cull_aabb(aabb, space->intersection_query_results, Space2DSW::INTERSECTION_QUERY_MAX, space->intersection_query_subindex_results);
 
 	real_t best_safe = 1;
@@ -236,7 +254,7 @@ bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transfor
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		if (p_exclude.has(space->intersection_query_results[i]->get_self()))
@@ -244,15 +262,6 @@ bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transfor
 
 		const CollisionObject2DSW *col_obj = space->intersection_query_results[i];
 		int shape_idx = space->intersection_query_subindex_results[i];
-
-		/*if (col_obj->get_type()==CollisionObject2DSW::TYPE_BODY) {
-
-			const Body2DSW *body=static_cast<const Body2DSW*>(col_obj);
-			if (body->get_one_way_collision_direction()!=Vector2() && p_motion.dot(body->get_one_way_collision_direction())<=CMP_EPSILON) {
-				print_line("failed in motion dir");
-				continue;
-			}
-		}*/
 
 		Transform2D col_obj_xform = col_obj->get_transform() * col_obj->get_shape_transform(shape_idx);
 		//test initial overlap, does it collide if going all the way?
@@ -299,7 +308,7 @@ bool Physics2DDirectSpaceStateSW::cast_motion(const RID &p_shape, const Transfor
 	return true;
 }
 
-bool Physics2DDirectSpaceStateSW::collide_shape(RID p_shape, const Transform2D &p_shape_xform, const Vector2 &p_motion, real_t p_margin, Vector2 *r_results, int p_result_max, int &r_result_count, const Set<RID> &p_exclude, uint32_t p_collision_mask) {
+bool Physics2DDirectSpaceStateSW::collide_shape(RID p_shape, const Transform2D &p_shape_xform, const Vector2 &p_motion, real_t p_margin, Vector2 *r_results, int p_result_max, int &r_result_count, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
 	if (p_result_max <= 0)
 		return 0;
@@ -330,7 +339,7 @@ bool Physics2DDirectSpaceStateSW::collide_shape(RID p_shape, const Transform2D &
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		const CollisionObject2DSW *col_obj = space->intersection_query_results[i];
@@ -388,7 +397,7 @@ static void _rest_cbk_result(const Vector2 &p_point_A, const Vector2 &p_point_B,
 	rd->best_shape = rd->shape;
 }
 
-bool Physics2DDirectSpaceStateSW::rest_info(RID p_shape, const Transform2D &p_shape_xform, const Vector2 &p_motion, real_t p_margin, ShapeRestInfo *r_info, const Set<RID> &p_exclude, uint32_t p_collision_mask) {
+bool Physics2DDirectSpaceStateSW::rest_info(RID p_shape, const Transform2D &p_shape_xform, const Vector2 &p_motion, real_t p_margin, ShapeRestInfo *r_info, const Set<RID> &p_exclude, uint32_t p_collision_mask, bool p_collide_with_bodies, bool p_collide_with_areas) {
 
 	Shape2DSW *shape = Physics2DServerSW::singletonsw->shape_owner.get(p_shape);
 	ERR_FAIL_COND_V(!shape, 0);
@@ -406,7 +415,7 @@ bool Physics2DDirectSpaceStateSW::rest_info(RID p_shape, const Transform2D &p_sh
 
 	for (int i = 0; i < amount; i++) {
 
-		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask))
+		if (!_can_collide_with(space->intersection_query_results[i], p_collision_mask, p_collide_with_bodies, p_collide_with_areas))
 			continue;
 
 		const CollisionObject2DSW *col_obj = space->intersection_query_results[i];
@@ -491,12 +500,23 @@ int Space2DSW::test_body_ray_separation(Body2DSW *p_body, const Transform2D &p_t
 
 	Rect2 body_aabb;
 
+	bool shapes_found = false;
+
 	for (int i = 0; i < p_body->get_shape_count(); i++) {
 
-		if (i == 0)
+		if (p_body->is_shape_set_as_disabled(i))
+			continue;
+
+		if (!shapes_found) {
 			body_aabb = p_body->get_shape_aabb(i);
-		else
+			shapes_found = true;
+		} else {
 			body_aabb = body_aabb.merge(p_body->get_shape_aabb(i));
+		}
+	}
+
+	if (!shapes_found) {
+		return 0;
 	}
 
 	// Undo the currently transform the physics server is aware of and apply the provided one
@@ -651,12 +671,23 @@ bool Space2DSW::test_body_motion(Body2DSW *p_body, const Transform2D &p_from, co
 	}
 	Rect2 body_aabb;
 
+	bool shapes_found = false;
+
 	for (int i = 0; i < p_body->get_shape_count(); i++) {
 
-		if (i == 0)
+		if (p_body->is_shape_set_as_disabled(i))
+			continue;
+
+		if (!shapes_found) {
 			body_aabb = p_body->get_shape_aabb(i);
-		else
+			shapes_found = true;
+		} else {
 			body_aabb = body_aabb.merge(p_body->get_shape_aabb(i));
+		}
+	}
+
+	if (!shapes_found) {
+		return false;
 	}
 
 	// Undo the currently transform the physics server is aware of and apply the provided one
@@ -720,18 +751,33 @@ bool Space2DSW::test_body_motion(Body2DSW *p_body, const Transform2D &p_from, co
 						cbk.valid_depth = p_margin; //only valid depth is the collision margin
 						cbk.invalid_by_dir = 0;
 
+						if (col_obj->get_type() == CollisionObject2DSW::TYPE_BODY) {
+							const Body2DSW *b = static_cast<const Body2DSW *>(col_obj);
+							if (b->get_mode() == Physics2DServer::BODY_MODE_KINEMATIC || b->get_mode() == Physics2DServer::BODY_MODE_RIGID) {
+								//fix for moving platforms (kinematic and dynamic), margin is increased by how much it moved in the given direction
+								Vector2 lv = b->get_linear_velocity();
+								//compute displacement from linear velocity
+								Vector2 motion = lv * Physics2DDirectBodyStateSW::singleton->step;
+								float motion_len = motion.length();
+								motion.normalize();
+								cbk.valid_depth += motion_len * MAX(motion.dot(-cbk.valid_dir), 0.0);
+							}
+						}
 					} else {
 						cbk.valid_dir = Vector2();
 						cbk.valid_depth = 0;
 						cbk.invalid_by_dir = 0;
 					}
 
+					int current_collisions = cbk.amount;
+					bool did_collide = false;
+
 					Shape2DSW *against_shape = col_obj->get_shape(shape_idx);
 					if (CollisionSolver2DSW::solve(body_shape, body_shape_xform, Vector2(), against_shape, col_obj->get_transform() * col_obj->get_shape_transform(shape_idx), Vector2(), cbkres, cbkptr, NULL, p_margin)) {
-						collided = cbk.amount > 0;
+						did_collide = cbk.amount > current_collisions;
 					}
 
-					if (!collided && cbk.invalid_by_dir > 0) {
+					if (!did_collide && cbk.invalid_by_dir > 0) {
 						//this shape must be excluded
 						if (excluded_shape_pair_count < max_excluded_shape_pairs) {
 							ExcludedShapeSW esp;
@@ -740,6 +786,10 @@ bool Space2DSW::test_body_motion(Body2DSW *p_body, const Transform2D &p_from, co
 							esp.against_shape_index = shape_idx;
 							excluded_shape_pairs[excluded_shape_pair_count++] = esp;
 						}
+					}
+
+					if (did_collide) {
+						collided = true;
 					}
 				}
 			}
@@ -1237,6 +1287,7 @@ Space2DSW::Space2DSW() {
 	body_linear_velocity_sleep_threshold = GLOBAL_DEF("physics/2d/sleep_threshold_linear", 2.0);
 	body_angular_velocity_sleep_threshold = GLOBAL_DEF("physics/2d/sleep_threshold_angular", (8.0 / 180.0 * Math_PI));
 	body_time_to_sleep = GLOBAL_DEF("physics/2d/time_before_sleep", 0.5);
+	ProjectSettings::get_singleton()->set_custom_property_info("physics/2d/time_before_sleep", PropertyInfo(Variant::REAL, "physics/2d/time_before_sleep", PROPERTY_HINT_RANGE, "0,5,0.01,or_greater"));
 
 	broadphase = BroadPhase2DSW::create_func();
 	broadphase->set_pair_callback(_broadphase_pair, this);

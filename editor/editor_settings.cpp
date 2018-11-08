@@ -30,6 +30,7 @@
 
 #include "editor_settings.h"
 
+#include "core/io/certs_compressed.gen.h"
 #include "core/io/compression.h"
 #include "core/io/config_file.h"
 #include "core/io/file_access_memory.h"
@@ -146,7 +147,7 @@ bool EditorSettings::_get(const StringName &p_name, Variant &r_ret) const {
 
 	const VariantContainer *v = props.getptr(p_name);
 	if (!v) {
-		print_line("EditorSettings::_get - Warning, not found: " + String(p_name));
+		WARN_PRINTS("EditorSettings::_get - Property not found: " + String(p_name));
 		return false;
 	}
 	r_ret = v->variant;
@@ -298,17 +299,17 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("interface/editor/main_font_size", 14);
 	hints["interface/editor/main_font_size"] = PropertyInfo(Variant::INT, "interface/editor/main_font_size", PROPERTY_HINT_RANGE, "10,40,1", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
 	_initial_set("interface/editor/code_font_size", 14);
-	hints["interface/editor/code_font_size"] = PropertyInfo(Variant::INT, "interface/editor/code_font_size", PROPERTY_HINT_RANGE, "8,96,1", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/code_font_size"] = PropertyInfo(Variant::INT, "interface/editor/code_font_size", PROPERTY_HINT_RANGE, "8,96,1", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/main_font_hinting", 2);
-	hints["interface/editor/main_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/main_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/main_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/main_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/code_font_hinting", 2);
-	hints["interface/editor/code_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/code_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/code_font_hinting"] = PropertyInfo(Variant::INT, "interface/editor/code_font_hinting", PROPERTY_HINT_ENUM, "None,Light,Normal", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/main_font", "");
-	hints["interface/editor/main_font"] = PropertyInfo(Variant::STRING, "interface/editor/main_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/main_font"] = PropertyInfo(Variant::STRING, "interface/editor/main_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/main_font_bold", "");
-	hints["interface/editor/main_font_bold"] = PropertyInfo(Variant::STRING, "interface/editor/main_font_bold", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/main_font_bold"] = PropertyInfo(Variant::STRING, "interface/editor/main_font_bold", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/code_font", "");
-	hints["interface/editor/code_font"] = PropertyInfo(Variant::STRING, "interface/editor/code_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_RESTART_IF_CHANGED);
+	hints["interface/editor/code_font"] = PropertyInfo(Variant::STRING, "interface/editor/code_font", PROPERTY_HINT_GLOBAL_FILE, "*.ttf,*.otf", PROPERTY_USAGE_DEFAULT);
 	_initial_set("interface/editor/dim_editor_on_dialog_popup", true);
 	_initial_set("interface/editor/dim_amount", 0.6f);
 	hints["interface/editor/dim_amount"] = PropertyInfo(Variant::REAL, "interface/editor/dim_amount", PROPERTY_HINT_RANGE, "0,1,0.01", PROPERTY_USAGE_DEFAULT);
@@ -356,7 +357,8 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("text_editor/theme/color_theme", "Adaptive");
 	hints["text_editor/theme/color_theme"] = PropertyInfo(Variant::STRING, "text_editor/theme/color_theme", PROPERTY_HINT_ENUM, "Adaptive,Default,Custom");
 
-	_initial_set("text_editor/theme/line_spacing", 4);
+	_initial_set("text_editor/theme/line_spacing", 6);
+	_initial_set("text_editor/theme/selection_color", Color::html("40808080"));
 
 	_load_default_text_editor_theme();
 
@@ -364,6 +366,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	_initial_set("text_editor/highlighting/highlight_all_occurrences", true);
 	_initial_set("text_editor/highlighting/highlight_current_line", true);
+	_initial_set("text_editor/highlighting/highlight_type_safe_lines", true);
 	_initial_set("text_editor/cursor/scroll_past_end_of_file", false);
 
 	_initial_set("text_editor/indent/type", 0);
@@ -395,7 +398,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	_initial_set("text_editor/cursor/block_caret", false);
 	_initial_set("text_editor/cursor/caret_blink", true);
-	_initial_set("text_editor/cursor/caret_blink_speed", 0.65);
+	_initial_set("text_editor/cursor/caret_blink_speed", 0.5);
 	hints["text_editor/cursor/caret_blink_speed"] = PropertyInfo(Variant::REAL, "text_editor/cursor/caret_blink_speed", PROPERTY_HINT_RANGE, "0.1, 10, 0.01");
 	_initial_set("text_editor/cursor/right_click_moves_caret", true);
 
@@ -404,9 +407,10 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("text_editor/completion/callhint_tooltip_offset", Vector2());
 	_initial_set("text_editor/files/restore_scripts_on_load", true);
 	_initial_set("text_editor/completion/complete_file_paths", true);
+	_initial_set("text_editor/completion/add_type_hints", false);
 
 	_initial_set("docks/scene_tree/start_create_dialog_fully_expanded", false);
-	_initial_set("docks/scene_tree/draw_relationship_lines", false);
+	_initial_set("docks/scene_tree/draw_relationship_lines", true);
 	_initial_set("docks/scene_tree/relationship_line_color", Color::html("464646"));
 
 	_initial_set("editors/grid_map/pick_distance", 5000.0);
@@ -471,6 +475,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	hints["editors/3d/freelook/freelook_modifier_speed_factor"] = PropertyInfo(Variant::REAL, "editors/3d/freelook/freelook_modifier_speed_factor", PROPERTY_HINT_RANGE, "0.0, 10.0, 0.1");
 	_initial_set("editors/3d/freelook/freelook_speed_zoom_link", false);
 
+	_initial_set("editors/2d/grid_color", Color(1.0, 1.0, 1.0, 0.07));
 	_initial_set("editors/2d/guides_color", Color(0.6, 0.0, 0.8));
 	_initial_set("editors/2d/bone_width", 5);
 	_initial_set("editors/2d/bone_color1", Color(1.0, 1.0, 1.0, 0.9));
@@ -480,6 +485,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("editors/2d/bone_outline_color", Color(0.35, 0.35, 0.35));
 	_initial_set("editors/2d/bone_outline_size", 2);
 	_initial_set("editors/2d/keep_margins_when_changing_anchors", false);
+	_initial_set("editors/2d/viewport_border_color", Color(0.4, 0.4, 1.0, 0.4));
 	_initial_set("editors/2d/warped_mouse_panning", true);
 	_initial_set("editors/2d/simple_spacebar_panning", false);
 	_initial_set("editors/2d/scroll_to_pan", false);
@@ -490,7 +496,7 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	_initial_set("run/window_placement/rect", 1);
 	hints["run/window_placement/rect"] = PropertyInfo(Variant::INT, "run/window_placement/rect", PROPERTY_HINT_ENUM, "Top Left,Centered,Custom Position,Force Maximized,Force Fullscreen");
-	String screen_hints = TTR("Default (Same as Editor)");
+	String screen_hints = "Same as Editor,Previous Monitor,Next Monitor";
 	for (int i = 0; i < OS::get_singleton()->get_screen_count(); i++) {
 		screen_hints += ",Monitor " + itos(i + 1);
 	}
@@ -506,15 +512,16 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 	_initial_set("filesystem/file_dialog/show_hidden_files", false);
 	_initial_set("filesystem/file_dialog/display_mode", 0);
 	hints["filesystem/file_dialog/display_mode"] = PropertyInfo(Variant::INT, "filesystem/file_dialog/display_mode", PROPERTY_HINT_ENUM, "Thumbnails,List");
+
 	_initial_set("filesystem/file_dialog/thumbnail_size", 64);
 	hints["filesystem/file_dialog/thumbnail_size"] = PropertyInfo(Variant::INT, "filesystem/file_dialog/thumbnail_size", PROPERTY_HINT_RANGE, "32,128,16");
 
 	_initial_set("docks/filesystem/display_mode", 0);
-	hints["docks/filesystem/display_mode"] = PropertyInfo(Variant::INT, "docks/filesystem/display_mode", PROPERTY_HINT_ENUM, "Thumbnails,List");
+	hints["docks/filesystem/display_mode"] = PropertyInfo(Variant::INT, "docks/filesystem/display_mode", PROPERTY_HINT_ENUM, "Tree only, Split");
 	_initial_set("docks/filesystem/thumbnail_size", 64);
 	hints["docks/filesystem/thumbnail_size"] = PropertyInfo(Variant::INT, "docks/filesystem/thumbnail_size", PROPERTY_HINT_RANGE, "32,128,16");
-	_initial_set("docks/filesystem/display_mode", 0);
-	hints["docks/filesystem/display_mode"] = PropertyInfo(Variant::INT, "docks/filesystem/display_mode", PROPERTY_HINT_ENUM, "Thumbnails,List");
+	_initial_set("docks/filesystem/files_display_mode", 0);
+	hints["docks/filesystem/files_display_mode"] = PropertyInfo(Variant::INT, "docks/filesystem/files_display_mode", PROPERTY_HINT_ENUM, "Thumbnails,List");
 	_initial_set("docks/filesystem/always_show_folders", true);
 
 	_initial_set("editors/animation/autorename_animation_tracks", true);
@@ -524,7 +531,6 @@ void EditorSettings::_load_defaults(Ref<ConfigFile> p_extra_config) {
 
 	_initial_set("docks/property_editor/texture_preview_width", 48);
 	_initial_set("docks/property_editor/auto_refresh_interval", 0.3);
-	_initial_set("text_editor/help/doc_path", "");
 	_initial_set("text_editor/help/show_help_index", true);
 
 	_initial_set("filesystem/import/ask_save_before_reimport", false);
@@ -592,6 +598,7 @@ void EditorSettings::_load_default_text_editor_theme() {
 	_initial_set("text_editor/highlighting/completion_font_color", Color::html("aaaaaa"));
 	_initial_set("text_editor/highlighting/text_color", Color::html("aaaaaa"));
 	_initial_set("text_editor/highlighting/line_number_color", Color::html("66aaaaaa"));
+	_initial_set("text_editor/highlighting/safe_line_number_color", Color::html("99aac8aa"));
 	_initial_set("text_editor/highlighting/caret_color", Color::html("aaaaaa"));
 	_initial_set("text_editor/highlighting/caret_background_color", Color::html("000000"));
 	_initial_set("text_editor/highlighting/text_selected_color", Color::html("000000"));
@@ -752,7 +759,7 @@ void EditorSettings::create() {
 		}
 
 		if (dir->change_dir(data_dir) != OK) {
-			dir->make_dir(data_dir);
+			dir->make_dir_recursive(data_dir);
 			if (dir->change_dir(data_dir) != OK) {
 				ERR_PRINT("Cannot create data directory!");
 				memdelete(dir);
@@ -768,14 +775,8 @@ void EditorSettings::create() {
 
 		// Validate/create cache dir
 
-		if (dir->change_dir(cache_path) != OK) {
-			ERR_PRINT("Cannot find path for cache directory!");
-			memdelete(dir);
-			goto fail;
-		}
-
 		if (dir->change_dir(cache_dir) != OK) {
-			dir->make_dir(cache_dir);
+			dir->make_dir_recursive(cache_dir);
 			if (dir->change_dir(cache_dir) != OK) {
 				ERR_PRINT("Cannot create cache directory!");
 				memdelete(dir);
@@ -785,14 +786,8 @@ void EditorSettings::create() {
 
 		// Validate/create config dir and subdirectories
 
-		if (dir->change_dir(config_path) != OK) {
-			ERR_PRINT("Cannot find path for config directory!");
-			memdelete(dir);
-			goto fail;
-		}
-
 		if (dir->change_dir(config_dir) != OK) {
-			dir->make_dir(config_dir);
+			dir->make_dir_recursive(config_dir);
 			if (dir->change_dir(config_dir) != OK) {
 				ERR_PRINT("Cannot create config directory!");
 				memdelete(dir);
@@ -858,10 +853,7 @@ void EditorSettings::create() {
 		singleton->data_dir = data_dir;
 		singleton->cache_dir = cache_dir;
 
-		if (OS::get_singleton()->is_stdout_verbose()) {
-
-			print_line("EditorSettings: Load OK!");
-		}
+		print_verbose("EditorSettings: Load OK!");
 
 		singleton->setup_language();
 		singleton->setup_network();
@@ -878,7 +870,7 @@ fail:
 		Vector<String> list = extra_config->get_value("init_projects", "list");
 		for (int i = 0; i < list.size(); i++) {
 
-			list[i] = exe_path + "/" + list[i];
+			list.write[i] = exe_path + "/" + list[i];
 		};
 		extra_config->set_value("init_projects", "list", list);
 	};
@@ -955,6 +947,10 @@ void EditorSettings::setup_network() {
 
 	_initial_set("network/debug/remote_port", port);
 	add_property_hint(PropertyInfo(Variant::INT, "network/debug/remote_port", PROPERTY_HINT_RANGE, "1,65535,1"));
+
+	// Editor SSL certificates override
+	_initial_set("network/ssl/editor_ssl_certificates", _SYSTEM_CERTS_PATH);
+	add_property_hint(PropertyInfo(Variant::STRING, "network/ssl/editor_ssl_certificates", PROPERTY_HINT_GLOBAL_FILE, "*.crt,*.pem"));
 }
 
 void EditorSettings::save() {
@@ -973,8 +969,8 @@ void EditorSettings::save() {
 
 	if (err != OK) {
 		ERR_PRINTS("Error saving editor settings to " + singleton->config_file_path);
-	} else if (OS::get_singleton()->is_stdout_verbose()) {
-		print_line("EditorSettings Save OK!");
+	} else {
+		print_verbose("EditorSettings: Save OK!");
 	}
 }
 
@@ -1155,20 +1151,20 @@ Variant EditorSettings::get_project_metadata(const String &p_section, const Stri
 	return cf->get_value(p_section, p_key, p_default);
 }
 
-void EditorSettings::set_favorite_dirs(const Vector<String> &p_favorites_dirs) {
+void EditorSettings::set_favorites(const Vector<String> &p_favorites) {
 
-	favorite_dirs = p_favorites_dirs;
-	FileAccess *f = FileAccess::open(get_project_settings_dir().plus_file("favorite_dirs"), FileAccess::WRITE);
+	favorites = p_favorites;
+	FileAccess *f = FileAccess::open(get_project_settings_dir().plus_file("favorites"), FileAccess::WRITE);
 	if (f) {
-		for (int i = 0; i < favorite_dirs.size(); i++)
-			f->store_line(favorite_dirs[i]);
+		for (int i = 0; i < favorites.size(); i++)
+			f->store_line(favorites[i]);
 		memdelete(f);
 	}
 }
 
-Vector<String> EditorSettings::get_favorite_dirs() const {
+Vector<String> EditorSettings::get_favorites() const {
 
-	return favorite_dirs;
+	return favorites;
 }
 
 void EditorSettings::set_recent_dirs(const Vector<String> &p_recent_dirs) {
@@ -1189,11 +1185,11 @@ Vector<String> EditorSettings::get_recent_dirs() const {
 
 void EditorSettings::load_favorites() {
 
-	FileAccess *f = FileAccess::open(get_project_settings_dir().plus_file("favorite_dirs"), FileAccess::READ);
+	FileAccess *f = FileAccess::open(get_project_settings_dir().plus_file("favorites"), FileAccess::READ);
 	if (f) {
 		String line = f->get_line().strip_edges();
 		while (line != "") {
-			favorite_dirs.push_back(line);
+			favorites.push_back(line);
 			line = f->get_line().strip_edges();
 		}
 		memdelete(f);
@@ -1220,18 +1216,25 @@ bool EditorSettings::is_dark_theme() {
 
 void EditorSettings::list_text_editor_themes() {
 	String themes = "Adaptive,Default,Custom";
+
 	DirAccess *d = DirAccess::open(get_text_editor_themes_dir());
 	if (d) {
+		List<String> custom_themes;
 		d->list_dir_begin();
 		String file = d->get_next();
 		while (file != String()) {
 			if (file.get_extension() == "tet" && file.get_basename().to_lower() != "default" && file.get_basename().to_lower() != "adaptive" && file.get_basename().to_lower() != "custom") {
-				themes += "," + file.get_basename();
+				custom_themes.push_back(file.get_basename());
 			}
 			file = d->get_next();
 		}
 		d->list_dir_end();
 		memdelete(d);
+
+		custom_themes.sort();
+		for (List<String>::Element *E = custom_themes.front(); E; E = E->next()) {
+			themes += "," + E->get();
+		}
 	}
 	add_property_hint(PropertyInfo(Variant::STRING, "text_editor/theme/color_theme", PROPERTY_HINT_ENUM, themes));
 }
@@ -1474,8 +1477,8 @@ void EditorSettings::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_project_metadata", "section", "key", "data"), &EditorSettings::set_project_metadata);
 	ClassDB::bind_method(D_METHOD("get_project_metadata", "section", "key", "default"), &EditorSettings::get_project_metadata, DEFVAL(Variant()));
 
-	ClassDB::bind_method(D_METHOD("set_favorite_dirs", "dirs"), &EditorSettings::set_favorite_dirs);
-	ClassDB::bind_method(D_METHOD("get_favorite_dirs"), &EditorSettings::get_favorite_dirs);
+	ClassDB::bind_method(D_METHOD("set_favorites", "dirs"), &EditorSettings::set_favorites);
+	ClassDB::bind_method(D_METHOD("get_favorites"), &EditorSettings::get_favorites);
 	ClassDB::bind_method(D_METHOD("set_recent_dirs", "dirs"), &EditorSettings::set_recent_dirs);
 	ClassDB::bind_method(D_METHOD("get_recent_dirs"), &EditorSettings::get_recent_dirs);
 

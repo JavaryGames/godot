@@ -31,13 +31,13 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include "class_db.h"
-#include "map.h"
-#include "node_path.h"
-#include "object.h"
-#include "project_settings.h"
+#include "core/class_db.h"
+#include "core/map.h"
+#include "core/node_path.h"
+#include "core/object.h"
+#include "core/project_settings.h"
+#include "core/script_language.h"
 #include "scene/main/scene_tree.h"
-#include "script_language.h"
 
 class Viewport;
 class SceneState;
@@ -68,6 +68,11 @@ public:
 	struct Comparator {
 
 		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->is_greater_than(p_a); }
+	};
+
+	struct ComparatorWithPriority {
+
+		bool operator()(const Node *p_a, const Node *p_b) const { return p_b->data.process_priority == p_a->data.process_priority ? p_b->is_greater_than(p_a) : p_b->data.process_priority > p_a->data.process_priority; }
 	};
 
 private:
@@ -118,6 +123,7 @@ private:
 		//should move all the stuff below to bits
 		bool physics_process;
 		bool idle_process;
+		int process_priority;
 
 		bool physics_process_internal;
 		bool idle_process_internal;
@@ -160,6 +166,7 @@ private:
 	void _propagate_enter_tree();
 	void _propagate_ready();
 	void _propagate_exit_tree();
+	void _propagate_after_exit_tree();
 	void _propagate_validate_owner();
 	void _print_stray_nodes();
 	void _propagate_pause_owner(Node *p_owner);
@@ -250,6 +257,8 @@ public:
 	Node *get_node_and_resource(const NodePath &p_path, RES &r_res, Vector<StringName> &r_leftover_subpath, bool p_last_is_property = true) const;
 
 	Node *get_parent() const;
+	Node *find_parent(const String &p_mask) const;
+
 	_FORCE_INLINE_ SceneTree *get_tree() const {
 		ERR_FAIL_COND_V(!data.tree, NULL);
 		return data.tree;
@@ -294,7 +303,7 @@ public:
 	String get_filename() const;
 
 	void set_editable_instance(Node *p_node, bool p_editable);
-	bool is_editable_instance(Node *p_node) const;
+	bool is_editable_instance(const Node *p_node) const;
 	void set_editable_instances(const HashMap<NodePath, int> &p_editable_instances);
 	HashMap<NodePath, int> get_editable_instances() const;
 
@@ -318,6 +327,8 @@ public:
 
 	void set_process_internal(bool p_idle_process_internal);
 	bool is_processing_internal() const;
+
+	void set_process_priority(int p_priority);
 
 	void set_process_input(bool p_enable);
 	bool is_processing_input() const;
@@ -355,6 +366,7 @@ public:
 	void set_pause_mode(PauseMode p_mode);
 	PauseMode get_pause_mode() const;
 	bool can_process() const;
+	bool can_process_notification(int p_what) const;
 
 	void request_ready();
 

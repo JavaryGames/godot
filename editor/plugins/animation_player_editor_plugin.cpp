@@ -30,12 +30,12 @@
 
 #include "animation_player_editor_plugin.h"
 
+#include "core/io/resource_loader.h"
+#include "core/io/resource_saver.h"
+#include "core/os/keyboard.h"
+#include "core/project_settings.h"
 #include "editor/animation_track_editor.h"
 #include "editor/editor_settings.h"
-#include "io/resource_loader.h"
-#include "io/resource_saver.h"
-#include "os/keyboard.h"
-#include "project_settings.h"
 
 // For onion skinning
 #include "editor/plugins/canvas_item_editor_plugin.h"
@@ -908,7 +908,7 @@ void AnimationPlayerEditor::edit(AnimationPlayer *p_player) {
 	}
 }
 
-void AnimationPlayerEditor::forward_force_draw_over_viewport(Control *p_overlay) {
+void AnimationPlayerEditor::forward_canvas_force_draw_over_viewport(Control *p_overlay) {
 
 	if (!onion.can_overlay)
 		return;
@@ -1333,7 +1333,7 @@ void AnimationPlayerEditor::_allocate_onion_layers() {
 		bool is_present = onion.differences_only && i == captures - 1;
 
 		// Each capture is a viewport with a canvas item attached that renders a full-size rect with the contents of the main viewport
-		onion.captures[i] = VS::get_singleton()->viewport_create();
+		onion.captures.write[i] = VS::get_singleton()->viewport_create();
 		VS::get_singleton()->viewport_set_usage(onion.captures[i], VS::VIEWPORT_USAGE_2D);
 		VS::get_singleton()->viewport_set_size(onion.captures[i], capture_size.width, capture_size.height);
 		VS::get_singleton()->viewport_set_update_mode(onion.captures[i], VS::VIEWPORT_UPDATE_ALWAYS);
@@ -1473,7 +1473,7 @@ void AnimationPlayerEditor::_prepare_onion_layers_2() {
 		float pos = cpos + step_off * anim->get_step();
 
 		bool valid = anim->has_loop() || (pos >= 0 && pos <= anim->get_length());
-		onion.captures_valid[cidx] = valid;
+		onion.captures_valid.write[cidx] = valid;
 		if (valid) {
 			player->seek(pos, true);
 			get_tree()->flush_transform_notifications(); // Needed for transforms of Spatials
@@ -1515,7 +1515,7 @@ void AnimationPlayerEditor::_prepare_onion_layers_2() {
 
 void AnimationPlayerEditor::_start_onion_skinning() {
 
-	// FIXME: Using "idle_frame" makes onion layers update one frame behing the current
+	// FIXME: Using "idle_frame" makes onion layers update one frame behind the current
 	if (!get_tree()->is_connected("idle_frame", this, "call_deferred")) {
 		get_tree()->connect("idle_frame", this, "call_deferred", varray("_prepare_onion_layers_1"));
 	}

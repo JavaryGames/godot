@@ -31,8 +31,8 @@
 #ifndef SCENE_STRING_NAMES_H
 #define SCENE_STRING_NAMES_H
 
-#include "node_path.h"
-#include "string_db.h"
+#include "core/node_path.h"
+#include "core/string_db.h"
 class SceneStringNames {
 
 	friend void register_scene_types();
@@ -127,6 +127,8 @@ public:
 	StringName _update_scroll;
 	StringName _update_xform;
 
+	StringName _clips_input;
+
 	StringName _proxgroup_add;
 	StringName _proxgroup_remove;
 
@@ -200,6 +202,8 @@ public:
 	StringName node_configuration_warning_changed;
 
 	StringName output;
+
+	StringName parameters_base_path;
 
 	enum {
 		MAX_MATERIALS = 32

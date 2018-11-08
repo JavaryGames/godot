@@ -29,8 +29,10 @@
 /*************************************************************************/
 
 #include "texture_loader_dummy.h"
+
 #include "core/os/file_access.h"
-#include "print_string.h"
+#include "core/print_string.h"
+
 #include <string.h>
 
 RES ResourceFormatDummyTexture::load(const String &p_path, const String &p_original_path, Error *r_error) {
@@ -44,10 +46,6 @@ RES ResourceFormatDummyTexture::load(const String &p_path, const String &p_origi
 	PoolVector<uint8_t> dstbuff;
 
 	dstbuff.resize(rowsize * height);
-
-	PoolVector<uint8_t>::Write dstbuff_write = dstbuff.write();
-
-	uint8_t *data = dstbuff_write.ptr();
 
 	uint8_t **row_p = memnew_arr(uint8_t *, height);
 

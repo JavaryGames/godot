@@ -92,8 +92,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	void popup();
-	void popup(const String &p_term);
+	void popup_dialog();
+	void popup_dialog(const String &p_term);
 
 	EditorHelpSearch();
 };
@@ -120,7 +120,7 @@ protected:
 public:
 	void select_class(const String &p_class);
 
-	void popup();
+	void popup_dialog();
 
 	EditorHelpIndex();
 };
@@ -243,6 +243,8 @@ class EditorHelp : public VBoxContainer {
 	void _search(const String &p_str);
 
 	void _unhandled_key_input(const Ref<InputEvent> &p_ev);
+
+	String _fix_constant(const String &p_constant) const;
 
 protected:
 	void _notification(int p_what);

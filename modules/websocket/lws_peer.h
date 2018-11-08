@@ -53,24 +53,29 @@ private:
 	WriteMode write_mode;
 	bool _was_string;
 
+	int close_code;
+	String close_reason;
+
 public:
 	struct PeerData {
 		uint32_t peer_id;
 		bool force_close;
-		RingBuffer<uint8_t> rbw;
-		RingBuffer<uint8_t> rbr;
-		mutable uint8_t input_buffer[PACKET_BUFFER_SIZE];
-		uint32_t in_size;
-		int in_count;
-		int out_count;
+		bool clean_close;
 	};
+
+	RingBuffer<uint8_t> rbw;
+	RingBuffer<uint8_t> rbr;
+	uint8_t input_buffer[PACKET_BUFFER_SIZE];
+	uint32_t in_size;
+	int in_count;
+	int out_count;
 
 	virtual int get_available_packet_count() const;
 	virtual Error get_packet(const uint8_t **r_buffer, int &r_buffer_size);
 	virtual Error put_packet(const uint8_t *p_buffer, int p_buffer_size);
 	virtual int get_max_packet_size() const { return PACKET_BUFFER_SIZE; };
 
-	virtual void close();
+	virtual void close(int p_code = 1000, String p_reason = "");
 	virtual bool is_connected_to_host() const;
 	virtual IP_Address get_connected_host() const;
 	virtual uint16_t get_connected_port() const;
@@ -82,6 +87,8 @@ public:
 	void set_wsi(struct lws *wsi);
 	Error read_wsi(void *in, size_t len);
 	Error write_wsi();
+	void send_close_status(struct lws *wsi);
+	String get_close_reason(void *in, size_t len, int &r_code);
 
 	LWSPeer();
 	~LWSPeer();

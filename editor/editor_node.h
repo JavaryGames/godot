@@ -38,6 +38,7 @@
 #include "editor/editor_about.h"
 #include "editor/editor_data.h"
 #include "editor/editor_export.h"
+#include "editor/editor_folding.h"
 #include "editor/editor_inspector.h"
 #include "editor/editor_log.h"
 #include "editor/editor_name_dialog.h"
@@ -56,6 +57,7 @@
 #include "editor/inspector_dock.h"
 #include "editor/node_dock.h"
 #include "editor/pane_drag.h"
+#include "editor/plugin_config_dialog.h"
 #include "editor/progress_dialog.h"
 #include "editor/project_export.h"
 #include "editor/project_settings_editor.h"
@@ -124,6 +126,7 @@ private:
 		FILE_SAVE_ALL_SCENES,
 		FILE_SAVE_BEFORE_RUN,
 		FILE_SAVE_AND_RUN,
+		FILE_SHOW_IN_FILESYSTEM,
 		FILE_IMPORT_SUBSCENE,
 		FILE_EXPORT_PROJECT,
 		FILE_EXPORT_MESH_LIBRARY,
@@ -154,6 +157,7 @@ private:
 		RUN_PLAY_CUSTOM_SCENE,
 		RUN_SCENE_SETTINGS,
 		RUN_SETTINGS,
+		RUN_PROJECT_DATA_FOLDER,
 		RUN_PROJECT_MANAGER,
 		RUN_FILE_SERVER,
 		RUN_LIVE_DEBUG,
@@ -168,6 +172,8 @@ private:
 		SETTINGS_LAYOUT_SAVE,
 		SETTINGS_LAYOUT_DELETE,
 		SETTINGS_LAYOUT_DEFAULT,
+		SETTINGS_EDITOR_DATA_FOLDER,
+		SETTINGS_EDITOR_CONFIG_FOLDER,
 		SETTINGS_MANAGE_EXPORT_TEMPLATES,
 		SETTINGS_PICK_MAIN_SCENE,
 		SETTINGS_TOGGLE_FULLSCREEN,
@@ -203,8 +209,9 @@ private:
 	int video_driver_current;
 	String video_driver_request;
 	void _video_driver_selected(int);
+	void _update_video_driver_color();
 
-	//split
+	// Split containers
 
 	HSplitContainer *left_l_hsplit;
 	VSplitContainer *left_l_vsplit;
@@ -217,9 +224,14 @@ private:
 
 	VSplitContainer *center_split;
 
-	//main tabs
+	// To access those easily by index
+	Vector<VSplitContainer *> vsplits;
+	Vector<HSplitContainer *> hsplits;
+
+	// Main tabs
 
 	Tabs *scene_tabs;
+	PopupMenu *scene_tabs_context_menu;
 	Panel *tab_preview_panel;
 	TextureRect *tab_preview;
 	int tab_closing;
@@ -252,6 +264,8 @@ private:
 	ToolButton *play_custom_scene_button;
 	ToolButton *search_button;
 	TextureProgress *audio_vu;
+
+	PluginConfigDialog *plugin_config_dialog;
 
 	RichTextLabel *load_errors;
 	AcceptDialog *load_error_dialog;
@@ -372,6 +386,7 @@ private:
 	EditorSelection *editor_selection;
 	ProjectExportDialog *project_export;
 	EditorResourcePreview *resource_preview;
+	EditorFolding editor_folding;
 
 	EditorFileServer *file_server;
 
@@ -411,6 +426,8 @@ private:
 	void _menu_option_confirm(int p_option, bool p_confirmed);
 	void _tool_menu_option(int p_idx);
 	void _update_debug_options();
+
+	void _on_plugin_ready(Object *p_script, const String &p_activate_name);
 
 	void _fs_changed();
 	void _resources_reimported(const Vector<String> &p_resources);
@@ -526,7 +543,7 @@ private:
 	void _scene_tab_exit();
 	void _scene_tab_input(const Ref<InputEvent> &p_input);
 	void _reposition_active_tab(int idx_to);
-	void _thumbnail_done(const String &p_path, const Ref<Texture> &p_preview, const Variant &p_udata);
+	void _thumbnail_done(const String &p_path, const Ref<Texture> &p_preview, const Ref<Texture> &p_small_preview, const Variant &p_udata);
 	void _scene_tab_script_edited(int p_tab);
 
 	Dictionary _get_main_scene_state();
@@ -584,6 +601,9 @@ private:
 
 	PrintHandlerList print_handler;
 	static void _print_handler(void *p_this, const String &p_string, bool p_error);
+
+	static void _resource_saved(RES p_resource, const String &p_path);
+	static void _resource_loaded(RES p_resource, const String &p_path);
 
 protected:
 	void _notification(int p_what);
@@ -667,7 +687,7 @@ public:
 	void fix_dependencies(const String &p_for_file);
 	void clear_scene() { _cleanup_scene(); }
 	Error load_scene(const String &p_scene, bool p_ignore_broken_deps = false, bool p_set_inherited = false, bool p_clear_errors = true, bool p_force_open_imported = false);
-	Error load_resource(const String &p_scene);
+	Error load_resource(const String &p_resource, bool p_ignore_broken_deps = false);
 
 	bool is_scene_open(const String &p_path);
 
@@ -675,6 +695,7 @@ public:
 	void set_current_scene(int p_idx);
 
 	static EditorData &get_editor_data() { return singleton->editor_data; }
+	static EditorFolding &get_editor_folding() { return singleton->editor_folding; }
 	EditorHistory *get_editor_history() { return &editor_history; }
 
 	static VSplitContainer *get_top_split() { return singleton->top_split; }
@@ -697,6 +718,8 @@ public:
 	void stop_child_process();
 
 	Ref<Theme> get_editor_theme() const { return theme; }
+	Ref<Texture> get_object_icon(const Object *p_object, const String &p_fallback = "Object") const;
+	Ref<Texture> get_class_icon(const String &p_class, const String &p_fallback = "Object") const;
 
 	void show_accept(const String &p_text, const String &p_title);
 	void show_warning(const String &p_text, const String &p_title = "Warning!");
@@ -801,9 +824,11 @@ public:
 	void make_visible(bool p_visible);
 	void edit(Object *p_object);
 	bool forward_gui_input(const Ref<InputEvent> &p_event);
+	void forward_canvas_draw_over_viewport(Control *p_overlay);
+	void forward_canvas_force_draw_over_viewport(Control *p_overlay);
 	bool forward_spatial_gui_input(Camera *p_camera, const Ref<InputEvent> &p_event, bool serve_when_force_input_enabled);
-	void forward_draw_over_viewport(Control *p_overlay);
-	void forward_force_draw_over_viewport(Control *p_overlay);
+	void forward_spatial_draw_over_viewport(Control *p_overlay);
+	void forward_spatial_force_draw_over_viewport(Control *p_overlay);
 	void add_plugin(EditorPlugin *p_plugin);
 	void clear();
 	bool empty();

@@ -31,10 +31,10 @@
 #include "collision_polygon_editor_plugin.h"
 
 #include "canvas_item_editor_plugin.h"
+#include "core/os/file_access.h"
+#include "core/os/input.h"
+#include "core/os/keyboard.h"
 #include "editor/editor_settings.h"
-#include "os/file_access.h"
-#include "os/input.h"
-#include "os/keyboard.h"
 #include "scene/3d/camera.h"
 #include "spatial_editor_plugin.h"
 
@@ -276,7 +276,7 @@ bool Polygon3DEditor::forward_spatial_gui_input(Camera *p_camera, const Ref<Inpu
 							//apply
 
 							ERR_FAIL_INDEX_V(edited_point, poly.size(), false);
-							poly[edited_point] = edited_point_pos;
+							poly.write[edited_point] = edited_point_pos;
 							undo_redo->create_action(TTR("Edit Poly"));
 							undo_redo->add_do_method(node, "set_polygon", poly);
 							undo_redo->add_undo_method(node, "set_polygon", pre_move_edit);

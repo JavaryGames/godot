@@ -31,11 +31,11 @@
 #ifndef EDITOR_FILE_SYSTEM_H
 #define EDITOR_FILE_SYSTEM_H
 
-#include "os/dir_access.h"
-#include "os/thread.h"
-#include "os/thread_safe.h"
+#include "core/os/dir_access.h"
+#include "core/os/thread.h"
+#include "core/os/thread_safe.h"
+#include "core/set.h"
 #include "scene/main/node.h"
-#include "set.h"
 class FileAccess;
 
 struct EditorProgressBG;
@@ -60,6 +60,7 @@ class EditorFileSystemDirectory : public Object {
 		bool verified; //used for checking changes
 		String script_class_name;
 		String script_class_extends;
+		String script_class_icon_path;
 	};
 
 	struct FileInfoSort {
@@ -90,6 +91,7 @@ public:
 	bool get_file_import_is_valid(int p_idx) const;
 	String get_file_script_class_name(int p_idx) const; //used for scripts
 	String get_file_script_class_extends(int p_idx) const; //used for scripts
+	String get_file_script_class_icon_path(int p_idx) const; //used for scripts
 
 	EditorFileSystemDirectory *get_parent();
 
@@ -163,6 +165,7 @@ class EditorFileSystem : public Node {
 		bool import_valid;
 		String script_class_name;
 		String script_class_extends;
+		String script_class_icon_path;
 	};
 
 	HashMap<String, FileCache> file_cache;
@@ -201,8 +204,6 @@ class EditorFileSystem : public Node {
 
 	bool _update_scan_actions();
 
-	static void _resource_saved(const String &p_path);
-
 	void _update_extensions();
 
 	void _reimport_file(const String &p_file);
@@ -225,7 +226,9 @@ class EditorFileSystem : public Node {
 	volatile bool update_script_classes_queued;
 	void _queue_update_script_classes();
 
-	String _get_global_script_class(const String &p_type, const String &p_path, String *r_extends) const;
+	String _get_global_script_class(const String &p_type, const String &p_path, String *r_extends, String *r_icon_path) const;
+
+	static Error _resource_import(const String &p_path);
 
 protected:
 	void _notification(int p_what);

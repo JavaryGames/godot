@@ -32,8 +32,8 @@
 
 #ifdef ALSA_ENABLED
 
-#include "os/os.h"
-#include "project_settings.h"
+#include "core/os/os.h"
+#include "core/project_settings.h"
 
 #include <errno.h>
 
@@ -58,7 +58,10 @@ Error AudioDriverALSA::init_device() {
 #define CHECK_FAIL(m_cond)                                       \
 	if (m_cond) {                                                \
 		fprintf(stderr, "ALSA ERR: %s\n", snd_strerror(status)); \
-		snd_pcm_close(pcm_handle);                               \
+		if (pcm_handle) {                                        \
+			snd_pcm_close(pcm_handle);                           \
+			pcm_handle = NULL;                                   \
+		}                                                        \
 		ERR_FAIL_COND_V(m_cond, ERR_CANT_OPEN);                  \
 	}
 
@@ -113,9 +116,7 @@ Error AudioDriverALSA::init_device() {
 	status = snd_pcm_hw_params_set_period_size_near(pcm_handle, hwparams, &period_size, NULL);
 	CHECK_FAIL(status < 0);
 
-	if (OS::get_singleton()->is_stdout_verbose()) {
-		print_line("audio buffer frames: " + itos(period_size) + " calculated latency: " + itos(period_size * 1000 / mix_rate) + "ms");
-	}
+	print_verbose("Audio buffer frames: " + itos(period_size) + " calculated latency: " + itos(period_size * 1000 / mix_rate) + "ms");
 
 	status = snd_pcm_hw_params_set_periods_near(pcm_handle, hwparams, &periods, NULL);
 	CHECK_FAIL(status < 0);
@@ -150,7 +151,6 @@ Error AudioDriverALSA::init() {
 	active = false;
 	thread_exited = false;
 	exit_thread = false;
-	pcm_open = false;
 
 	Error err = init_device();
 	if (err == OK) {
@@ -172,14 +172,14 @@ void AudioDriverALSA::thread_func(void *p_udata) {
 
 		if (!ad->active) {
 			for (unsigned int i = 0; i < ad->period_size * ad->channels; i++) {
-				ad->samples_out[i] = 0;
+				ad->samples_out.write[i] = 0;
 			}
 
 		} else {
 			ad->audio_server_process(ad->period_size, ad->samples_in.ptrw());
 
 			for (unsigned int i = 0; i < ad->period_size * ad->channels; i++) {
-				ad->samples_out[i] = ad->samples_in[i] >> 16;
+				ad->samples_out.write[i] = ad->samples_in[i] >> 16;
 			}
 		}
 
@@ -313,9 +313,9 @@ void AudioDriverALSA::unlock() {
 
 void AudioDriverALSA::finish_device() {
 
-	if (pcm_open) {
+	if (pcm_handle) {
 		snd_pcm_close(pcm_handle);
-		pcm_open = NULL;
+		pcm_handle = NULL;
 	}
 }
 

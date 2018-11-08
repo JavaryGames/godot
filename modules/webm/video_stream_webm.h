@@ -31,7 +31,7 @@
 #ifndef VIDEO_STREAM_WEBM_H
 #define VIDEO_STREAM_WEBM_H
 
-#include "io/resource_loader.h"
+#include "core/io/resource_loader.h"
 #include "scene/resources/video_stream.h"
 
 class WebMFrame;
@@ -109,7 +109,6 @@ private:
 class VideoStreamWebm : public VideoStream {
 
 	GDCLASS(VideoStreamWebm, VideoStream);
-	RES_BASE_EXTENSION("webm");
 
 	String file;
 	int audio_track;

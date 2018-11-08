@@ -30,7 +30,7 @@
 
 #include "node_path.h"
 
-#include "print_string.h"
+#include "core/print_string.h"
 
 void NodePath::_update_hash_cache() const {
 
@@ -276,7 +276,7 @@ NodePath NodePath::get_as_property_path() const {
 
 		String initial_subname = data->path[0];
 
-		for (size_t i = 1; i < data->path.size(); i++) {
+		for (int i = 1; i < data->path.size(); i++) {
 			initial_subname += "/" + data->path[i];
 		}
 		new_path.insert(0, initial_subname);
@@ -427,7 +427,7 @@ NodePath::NodePath(const String &p_path) {
 
 				String name = path.substr(from, i - from);
 				ERR_FAIL_INDEX(slice, data->path.size());
-				data->path[slice++] = name;
+				data->path.write[slice++] = name;
 			}
 			from = i + 1;
 			last_is_slash = true;

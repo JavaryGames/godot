@@ -30,9 +30,9 @@
 
 #include "audio_stream_editor_plugin.h"
 
+#include "core/io/resource_loader.h"
+#include "core/project_settings.h"
 #include "editor/editor_settings.h"
-#include "io/resource_loader.h"
-#include "project_settings.h"
 
 void AudioStreamEditor::_notification(int p_what) {
 
@@ -81,8 +81,8 @@ void AudioStreamEditor::_draw_preview() {
 		float min = preview->get_min(ofs, ofs_n) * 0.5 + 0.5;
 
 		int idx = i;
-		lines[idx * 2 + 0] = Vector2(i + 1, rect.position.y + min * rect.size.y);
-		lines[idx * 2 + 1] = Vector2(i + 1, rect.position.y + max * rect.size.y);
+		lines.write[idx * 2 + 0] = Vector2(i + 1, rect.position.y + min * rect.size.y);
+		lines.write[idx * 2 + 1] = Vector2(i + 1, rect.position.y + max * rect.size.y);
 	}
 
 	Vector<Color> color;

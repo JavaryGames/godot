@@ -30,15 +30,16 @@
 
 #include "os_javascript.h"
 
-#include "gles2/rasterizer_gles2.h"
-#include "gles3/rasterizer_gles3.h"
-#include "io/file_access_buffered_fa.h"
+#include "core/io/file_access_buffered_fa.h"
+#include "drivers/gles2/rasterizer_gles2.h"
+#include "drivers/gles3/rasterizer_gles3.h"
+#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/file_access_unix.h"
 #include "main/main.h"
 #include "servers/visual/visual_server_raster.h"
-#include "unix/dir_access_unix.h"
-#include "unix/file_access_unix.h"
 
 #include <emscripten.h>
+#include <png.h>
 #include <stdlib.h>
 
 #include "dom_keys.inc"
@@ -71,14 +72,6 @@ static bool is_canvas_focused() {
 
 static bool cursor_inside_canvas = true;
 
-EM_BOOL OS_JavaScript::browser_resize_callback(int p_event_type, const EmscriptenUiEvent *p_event, void *p_user_data) {
-
-	// The order of the fullscreen change event and the window size change
-	// event varies, even within just one browser, so defer handling.
-	get_singleton()->canvas_size_adjustment_requested = true;
-	return false;
-}
-
 EM_BOOL OS_JavaScript::fullscreen_change_callback(int p_event_type, const EmscriptenFullscreenChangeEvent *p_event, void *p_user_data) {
 
 	OS_JavaScript *os = get_singleton();
@@ -88,7 +81,13 @@ EM_BOOL OS_JavaScript::fullscreen_change_callback(int p_event_type, const Emscri
 		// This event property is the only reliable data on
 		// browser fullscreen state.
 		os->video_mode.fullscreen = p_event->isFullscreen;
-		os->canvas_size_adjustment_requested = true;
+		if (os->video_mode.fullscreen) {
+			os->entering_fullscreen = false;
+		} else {
+			// Restoring maximized window now will cause issues,
+			// so delay until main_loop_iterate.
+			os->just_exited_fullscreen = true;
+		}
 	}
 	return false;
 }
@@ -114,52 +113,43 @@ Size2 OS_JavaScript::get_screen_size(int p_screen) const {
 void OS_JavaScript::set_window_size(const Size2 p_size) {
 
 	windowed_size = p_size;
-	if (is_window_fullscreen()) {
+	if (video_mode.fullscreen) {
 		window_maximized = false;
 		set_window_fullscreen(false);
-	} else if (is_window_maximized()) {
-		set_window_maximized(false);
 	} else {
-		video_mode.width = p_size.x;
-		video_mode.height = p_size.y;
-		emscripten_set_canvas_size(p_size.x, p_size.y);
+		if (window_maximized) {
+			emscripten_exit_soft_fullscreen();
+			window_maximized = false;
+		}
+		emscripten_set_canvas_element_size(NULL, p_size.x, p_size.y);
 	}
 }
 
 Size2 OS_JavaScript::get_window_size() const {
 
-	int canvas[3];
-	emscripten_get_canvas_size(canvas, canvas + 1, canvas + 2);
+	int canvas[2];
+	emscripten_get_canvas_element_size(NULL, canvas, canvas + 1);
 	return Size2(canvas[0], canvas[1]);
 }
 
 void OS_JavaScript::set_window_maximized(bool p_enabled) {
 
-	window_maximized = p_enabled;
-	if (is_window_fullscreen()) {
+	if (video_mode.fullscreen) {
+		window_maximized = p_enabled;
 		set_window_fullscreen(false);
-		return;
-	}
-	// Calling emscripten_enter_soft_fullscreen mutltiple times hides all
-	// page elements except the canvas permanently, so track state.
-	if (p_enabled && !soft_fullscreen_enabled) {
-
+	} else if (!p_enabled) {
+		emscripten_exit_soft_fullscreen();
+		window_maximized = false;
+	} else if (!window_maximized) {
+		// Prevent calling emscripten_enter_soft_fullscreen mutltiple times,
+		// this would hide page elements permanently.
 		EmscriptenFullscreenStrategy strategy;
 		strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
 		strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
 		strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
 		strategy.canvasResizedCallback = NULL;
 		emscripten_enter_soft_fullscreen(NULL, &strategy);
-		soft_fullscreen_enabled = true;
-		video_mode.width = get_window_size().width;
-		video_mode.height = get_window_size().height;
-	} else if (!p_enabled) {
-
-		emscripten_exit_soft_fullscreen();
-		soft_fullscreen_enabled = false;
-		video_mode.width = windowed_size.width;
-		video_mode.height = windowed_size.height;
-		emscripten_set_canvas_size(video_mode.width, video_mode.height);
+		window_maximized = p_enabled;
 	}
 }
 
@@ -170,30 +160,33 @@ bool OS_JavaScript::is_window_maximized() const {
 
 void OS_JavaScript::set_window_fullscreen(bool p_enabled) {
 
-	if (p_enabled == is_window_fullscreen()) {
+	if (p_enabled == video_mode.fullscreen) {
 		return;
 	}
 
-	// Just request changes here, if successful, canvas is resized in
-	// _browser_resize_callback or _fullscreen_change_callback.
-	EMSCRIPTEN_RESULT result;
+	// Just request changes here, if successful, logic continues in
+	// fullscreen_change_callback.
 	if (p_enabled) {
 		if (window_maximized) {
-			// Soft fullsreen during real fulllscreen can cause issues.
-			set_window_maximized(false);
-			window_maximized = true;
+			// Soft fullsreen during real fullscreen can cause issues, so exit.
+			// This must be called before requesting full screen.
+			emscripten_exit_soft_fullscreen();
 		}
 		EmscriptenFullscreenStrategy strategy;
 		strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
 		strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
 		strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
 		strategy.canvasResizedCallback = NULL;
-		emscripten_request_fullscreen_strategy(NULL, false, &strategy);
+		EMSCRIPTEN_RESULT result = emscripten_request_fullscreen_strategy(NULL, false, &strategy);
+		ERR_EXPLAIN("Enabling fullscreen is only possible from an input callback for the HTML5 platform");
+		ERR_FAIL_COND(result == EMSCRIPTEN_RESULT_FAILED_NOT_DEFERRED);
+		ERR_FAIL_COND(result != EMSCRIPTEN_RESULT_SUCCESS);
+		// Not fullscreen yet, so prevent "windowed" canvas dimensions from
+		// being overwritten.
+		entering_fullscreen = true;
 	} else {
-		result = emscripten_exit_fullscreen();
-		if (result != EMSCRIPTEN_RESULT_SUCCESS) {
-			ERR_PRINTS("Failed to exit fullscreen: Code " + itos(result));
-		}
+		// No logic allowed here, since exiting w/ ESC key won't use this function.
+		ERR_FAIL_COND(emscripten_exit_fullscreen() != EMSCRIPTEN_RESULT_SUCCESS);
 	}
 }
 
@@ -385,15 +378,13 @@ static void set_css_cursor(const char *p_cursor) {
 	/* clang-format on */
 }
 
-static const char *get_css_cursor() {
+static bool is_css_cursor_hidden() {
 
-	char cursor[16];
 	/* clang-format off */
-	EM_ASM_INT({
-		stringToUTF8(Module.canvas.style.cursor ? Module.canvas.style.cursor : 'auto', $0, 16);
-	}, cursor);
+	return EM_ASM_INT({
+		return Module.canvas.style.cursor === 'none';
+	});
 	/* clang-format on */
-	return cursor;
 }
 
 void OS_JavaScript::set_cursor_shape(CursorShape p_shape) {
@@ -437,7 +428,7 @@ void OS_JavaScript::set_mouse_mode(OS::MouseMode p_mode) {
 
 OS::MouseMode OS_JavaScript::get_mouse_mode() const {
 
-	if (String::utf8(get_css_cursor()) == "none")
+	if (is_css_cursor_hidden())
 		return MOUSE_MODE_HIDDEN;
 
 	EmscriptenPointerlockChangeEvent ev;
@@ -573,8 +564,11 @@ void OS_JavaScript::process_joypads() {
 	int joypad_count = emscripten_get_num_gamepads();
 	for (int joypad = 0; joypad < joypad_count; joypad++) {
 		EmscriptenGamepadEvent state;
-		emscripten_get_gamepad_status(joypad, &state);
-		if (state.connected) {
+		EMSCRIPTEN_RESULT query_result = emscripten_get_gamepad_status(joypad, &state);
+		// Chromium reserves gamepads slots, so NO_DATA is an expected result.
+		ERR_CONTINUE(query_result != EMSCRIPTEN_RESULT_SUCCESS &&
+					 query_result != EMSCRIPTEN_RESULT_NO_DATA);
+		if (query_result == EMSCRIPTEN_RESULT_SUCCESS && state.connected) {
 
 			int button_count = MIN(state.numButtons, 18);
 			int axis_count = MIN(state.numAxes, 8);
@@ -660,26 +654,60 @@ Error OS_JavaScript::initialize(const VideoMode &p_desired, int p_video_driver, 
 	attributes.alpha = false;
 	attributes.antialias = false;
 	ERR_FAIL_INDEX_V(p_video_driver, VIDEO_DRIVER_MAX, ERR_INVALID_PARAMETER);
-	switch (p_video_driver) {
-		case VIDEO_DRIVER_GLES3:
-			attributes.majorVersion = 2;
-			RasterizerGLES3::register_config();
-			RasterizerGLES3::make_current();
-			break;
-		case VIDEO_DRIVER_GLES2:
-			attributes.majorVersion = 1;
-			RasterizerGLES2::register_config();
-			RasterizerGLES2::make_current();
-			break;
+
+	bool gles3 = true;
+	if (p_video_driver == VIDEO_DRIVER_GLES2) {
+		gles3 = false;
+	}
+
+	bool gl_initialization_error = false;
+
+	while (true) {
+		if (gles3) {
+			if (RasterizerGLES3::is_viable() == OK) {
+				attributes.majorVersion = 2;
+				RasterizerGLES3::register_config();
+				RasterizerGLES3::make_current();
+				break;
+			} else {
+				if (GLOBAL_GET("rendering/quality/driver/driver_fallback") == "Best") {
+					p_video_driver = VIDEO_DRIVER_GLES2;
+					gles3 = false;
+					continue;
+				} else {
+					gl_initialization_error = true;
+					break;
+				}
+			}
+		} else {
+			if (RasterizerGLES2::is_viable() == OK) {
+				attributes.majorVersion = 1;
+				RasterizerGLES2::register_config();
+				RasterizerGLES2::make_current();
+				break;
+			} else {
+				gl_initialization_error = true;
+				break;
+			}
+		}
+	}
+
+	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context(NULL, &attributes);
+	if (emscripten_webgl_make_context_current(ctx) != EMSCRIPTEN_RESULT_SUCCESS) {
+		gl_initialization_error = true;
+	}
+
+	if (gl_initialization_error) {
+		OS::get_singleton()->alert("Your browser does not support any of the supported WebGL versions.\n"
+								   "Please update your browser version.",
+				"Unable to initialize Video driver");
+		return ERR_UNAVAILABLE;
 	}
 
 	video_driver_index = p_video_driver;
-	EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context(NULL, &attributes);
-	ERR_EXPLAIN("WebGL " + itos(attributes.majorVersion) + ".0 not available");
-	ERR_FAIL_COND_V(emscripten_webgl_make_context_current(ctx) != EMSCRIPTEN_RESULT_SUCCESS, ERR_UNAVAILABLE);
 
 	video_mode = p_desired;
-	// Can't fulfil fullscreen request during start-up due to browser security.
+	// Can't fulfill fullscreen request during start-up due to browser security.
 	video_mode.fullscreen = false;
 	/* clang-format off */
 	if (EM_ASM_INT_V({ return Module.resizeCanvasOnStart })) {
@@ -725,7 +753,6 @@ Error OS_JavaScript::initialize(const VideoMode &p_desired, int p_video_driver, 
 	SET_EM_CALLBACK("#canvas", keydown, keydown_callback)
 	SET_EM_CALLBACK("#canvas", keypress, keypress_callback)
 	SET_EM_CALLBACK("#canvas", keyup, keyup_callback)
-	SET_EM_CALLBACK(NULL, resize, browser_resize_callback)
 	SET_EM_CALLBACK(NULL, fullscreenchange, fullscreen_change_callback)
 	SET_EM_CALLBACK_NOTARGET(gamepadconnected, gamepad_change_callback)
 	SET_EM_CALLBACK_NOTARGET(gamepaddisconnected, gamepad_change_callback)
@@ -788,24 +815,38 @@ bool OS_JavaScript::main_loop_iterate() {
 			/* clang-format off */
 			EM_ASM(
 				FS.syncfs(function(err) {
-					if (err) { Module.printErr('Failed to save IDB file system: ' + err.message); }
+					if (err) { console.warn('Failed to save IDB file system: ' + err.message); }
 				});
 			);
 			/* clang-format on */
 		}
 	}
-	process_joypads();
-	if (canvas_size_adjustment_requested) {
 
-		if (video_mode.fullscreen || window_maximized) {
-			video_mode.width = get_window_size().width;
-			video_mode.height = get_window_size().height;
+	process_joypads();
+
+	if (just_exited_fullscreen) {
+		if (window_maximized) {
+			EmscriptenFullscreenStrategy strategy;
+			strategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_STRETCH;
+			strategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_STDDEF;
+			strategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+			strategy.canvasResizedCallback = NULL;
+			emscripten_enter_soft_fullscreen(NULL, &strategy);
+		} else {
+			emscripten_set_canvas_element_size(NULL, windowed_size.width, windowed_size.height);
 		}
-		if (!video_mode.fullscreen) {
-			set_window_maximized(window_maximized);
-		}
-		canvas_size_adjustment_requested = false;
+		just_exited_fullscreen = false;
 	}
+
+	int canvas[2];
+	emscripten_get_canvas_element_size(NULL, canvas, canvas + 1);
+	video_mode.width = canvas[0];
+	video_mode.height = canvas[1];
+	if (!window_maximized && !video_mode.fullscreen && !just_exited_fullscreen && !entering_fullscreen) {
+		windowed_size.width = canvas[0];
+		windowed_size.height = canvas[1];
+	}
+
 	return Main::iteration();
 }
 
@@ -820,6 +861,24 @@ void OS_JavaScript::finalize() {
 }
 
 // Miscellaneous
+
+Error OS_JavaScript::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr) {
+
+	ERR_EXPLAIN("OS::execute() is not available on the HTML5 platform");
+	ERR_FAIL_V(ERR_UNAVAILABLE);
+}
+
+Error OS_JavaScript::kill(const ProcessID &p_pid) {
+
+	ERR_EXPLAIN("OS::kill() is not available on the HTML5 platform");
+	ERR_FAIL_V(ERR_UNAVAILABLE);
+}
+
+int OS_JavaScript::get_process_id() const {
+
+	ERR_EXPLAIN("OS::get_process_id() is not available on the HTML5 platform");
+	ERR_FAIL_V(0);
+}
 
 extern "C" EMSCRIPTEN_KEEPALIVE void send_notification(int p_notification) {
 
@@ -867,6 +926,57 @@ void OS_JavaScript::set_window_title(const String &p_title) {
 	EM_ASM_({
 		document.title = UTF8ToString($0);
 	}, p_title.utf8().get_data());
+	/* clang-format on */
+}
+
+void OS_JavaScript::set_icon(const Ref<Image> &p_icon) {
+
+	ERR_FAIL_COND(p_icon.is_null());
+	Ref<Image> icon = p_icon;
+	if (icon->is_compressed()) {
+		icon = icon->duplicate();
+		ERR_FAIL_COND(icon->decompress() != OK)
+	}
+	if (icon->get_format() != Image::FORMAT_RGBA8) {
+		if (icon == p_icon)
+			icon = icon->duplicate();
+		icon->convert(Image::FORMAT_RGBA8);
+	}
+
+	png_image png_meta;
+	memset(&png_meta, 0, sizeof png_meta);
+	png_meta.version = PNG_IMAGE_VERSION;
+	png_meta.width = icon->get_width();
+	png_meta.height = icon->get_height();
+	png_meta.format = PNG_FORMAT_RGBA;
+
+	PoolByteArray png;
+	size_t len;
+	PoolByteArray::Read r = icon->get_data().read();
+	ERR_FAIL_COND(!png_image_write_get_memory_size(png_meta, len, 0, r.ptr(), 0, NULL));
+
+	png.resize(len);
+	PoolByteArray::Write w = png.write();
+	ERR_FAIL_COND(!png_image_write_to_memory(&png_meta, w.ptr(), &len, 0, r.ptr(), 0, NULL));
+	w = PoolByteArray::Write();
+
+	r = png.read();
+	/* clang-format off */
+	EM_ASM_ARGS({
+		var PNG_PTR = $0;
+		var PNG_LEN = $1;
+
+		var png = new Blob([HEAPU8.slice(PNG_PTR, PNG_PTR + PNG_LEN)], { type: "image/png" });
+		var url = URL.createObjectURL(png);
+		var link = document.getElementById('-gd-engine-icon');
+		if (link === null) {
+			link = document.createElement('link');
+			link.rel = 'icon';
+			link.id = '-gd-engine-icon';
+			document.head.appendChild(link);
+		}
+		link.href = url;
+	}, r.ptr(), len);
 	/* clang-format on */
 }
 
@@ -958,8 +1068,8 @@ OS_JavaScript::OS_JavaScript(int p_argc, char *p_argv[]) {
 	set_cmdline(p_argv[0], arguments);
 
 	window_maximized = false;
-	soft_fullscreen_enabled = false;
-	canvas_size_adjustment_requested = false;
+	entering_fullscreen = false;
+	just_exited_fullscreen = false;
 
 	main_loop = NULL;
 

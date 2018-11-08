@@ -30,9 +30,9 @@
 
 #include "visual_script_func_nodes.h"
 
-#include "engine.h"
-#include "io/resource_loader.h"
-#include "os/os.h"
+#include "core/engine.h"
+#include "core/io/resource_loader.h"
+#include "core/os/os.h"
 #include "scene/main/node.h"
 #include "scene/main/scene_tree.h"
 #include "visual_script_nodes.h"
@@ -43,7 +43,7 @@
 
 int VisualScriptFunctionCall::get_output_sequence_port_count() const {
 
-	if (method_cache.flags & METHOD_FLAG_CONST || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)))
+	if ((method_cache.flags & METHOD_FLAG_CONST && call_mode != CALL_MODE_INSTANCE) || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)))
 		return 0;
 	else
 		return 1;
@@ -51,7 +51,7 @@ int VisualScriptFunctionCall::get_output_sequence_port_count() const {
 
 bool VisualScriptFunctionCall::has_input_sequence_port() const {
 
-	if (method_cache.flags & METHOD_FLAG_CONST || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)))
+	if ((method_cache.flags & METHOD_FLAG_CONST && call_mode != CALL_MODE_INSTANCE) || (call_mode == CALL_MODE_BASIC_TYPE && Variant::is_method_const(basic_type, function)))
 		return false;
 	else
 		return true;
@@ -231,7 +231,7 @@ PropertyInfo VisualScriptFunctionCall::get_output_value_port_info(int p_idx) con
 
 		if (call_mode == CALL_MODE_INSTANCE) {
 			if (p_idx == 0) {
-				return PropertyInfo(Variant::OBJECT, "pass");
+				return PropertyInfo(Variant::OBJECT, "pass", PROPERTY_HINT_TYPE_STRING, get_base_type());
 			} else {
 				p_idx--;
 			}
@@ -394,7 +394,6 @@ void VisualScriptFunctionCall::_update_method_cache() {
 		}
 	}
 
-	//print_line("BASE: "+String(type)+" FUNC: "+String(function));
 	MethodBind *mb = ClassDB::get_method(type, function);
 	if (mb) {
 		use_default_args = mb->get_default_argument_count();
@@ -1055,7 +1054,7 @@ PropertyInfo VisualScriptPropertySet::get_output_value_port_info(int p_idx) cons
 	if (call_mode == CALL_MODE_BASIC_TYPE) {
 		return PropertyInfo(basic_type, "out");
 	} else if (call_mode == CALL_MODE_INSTANCE) {
-		return PropertyInfo(Variant::OBJECT, "pass");
+		return PropertyInfo(Variant::OBJECT, "pass", PROPERTY_HINT_TYPE_STRING, get_base_type());
 	} else {
 		return PropertyInfo();
 	}

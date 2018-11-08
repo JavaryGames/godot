@@ -30,7 +30,7 @@
 
 #include "audio_stream_player_2d.h"
 
-#include "engine.h"
+#include "core/engine.h"
 #include "scene/2d/area_2d.h"
 #include "scene/main/viewport.h"
 
@@ -179,7 +179,7 @@ void AudioStreamPlayer2D::_notification(int p_what) {
 
 			Physics2DDirectSpaceState::ShapeResult sr[MAX_INTERSECT_AREAS];
 
-			int areas = space_state->intersect_point(global_pos, sr, MAX_INTERSECT_AREAS, Set<RID>(), area_mask);
+			int areas = space_state->intersect_point(global_pos, sr, MAX_INTERSECT_AREAS, Set<RID>(), area_mask, false, true);
 
 			for (int i = 0; i < areas; i++) {
 
@@ -296,6 +296,7 @@ float AudioStreamPlayer2D::get_volume_db() const {
 }
 
 void AudioStreamPlayer2D::set_pitch_scale(float p_pitch_scale) {
+	ERR_FAIL_COND(p_pitch_scale <= 0.0);
 	pitch_scale = p_pitch_scale;
 }
 float AudioStreamPlayer2D::get_pitch_scale() const {

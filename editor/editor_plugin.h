@@ -31,15 +31,15 @@
 #ifndef EDITOR_PLUGIN_H
 #define EDITOR_PLUGIN_H
 
+#include "core/io/config_file.h"
+#include "core/undo_redo.h"
 #include "editor/editor_inspector.h"
 #include "editor/import/editor_import_plugin.h"
 #include "editor/import/resource_importer_scene.h"
 #include "editor/script_create_dialog.h"
-#include "io/config_file.h"
 #include "scene/gui/tool_button.h"
 #include "scene/main/node.h"
 #include "scene/resources/texture.h"
-#include "undo_redo.h"
 
 /**
 	@author Juan Linietsky <reduzio@gmail.com>
@@ -51,7 +51,6 @@ class Camera;
 class EditorSelection;
 class EditorExport;
 class EditorSettings;
-class SpatialEditorGizmo;
 class EditorImportPlugin;
 class EditorExportPlugin;
 class EditorResourcePreview;
@@ -115,6 +114,7 @@ class EditorPlugin : public Node {
 	bool force_draw_over_forwarding_enabled;
 
 	String last_main_screen_name;
+	String _dir_cache;
 
 protected:
 	static void _bind_methods();
@@ -127,10 +127,12 @@ public:
 	enum CustomControlContainer {
 		CONTAINER_TOOLBAR,
 		CONTAINER_SPATIAL_EDITOR_MENU,
-		CONTAINER_SPATIAL_EDITOR_SIDE,
+		CONTAINER_SPATIAL_EDITOR_SIDE_LEFT,
+		CONTAINER_SPATIAL_EDITOR_SIDE_RIGHT,
 		CONTAINER_SPATIAL_EDITOR_BOTTOM,
 		CONTAINER_CANVAS_EDITOR_MENU,
-		CONTAINER_CANVAS_EDITOR_SIDE,
+		CONTAINER_CANVAS_EDITOR_SIDE_LEFT,
+		CONTAINER_CANVAS_EDITOR_SIDE_RIGHT,
 		CONTAINER_CANVAS_EDITOR_BOTTOM,
 		CONTAINER_PROPERTY_EDITOR_BOTTOM
 	};
@@ -171,11 +173,14 @@ public:
 	void notify_scene_closed(const String &scene_filepath);
 	void notify_resource_saved(const Ref<Resource> &p_resource);
 
-	virtual Ref<SpatialEditorGizmo> create_spatial_gizmo(Spatial *p_spatial);
 	virtual bool forward_canvas_gui_input(const Ref<InputEvent> &p_event);
-	virtual void forward_draw_over_viewport(Control *p_overlay);
-	virtual void forward_force_draw_over_viewport(Control *p_overlay);
+	virtual void forward_canvas_draw_over_viewport(Control *p_overlay);
+	virtual void forward_canvas_force_draw_over_viewport(Control *p_overlay);
+
 	virtual bool forward_spatial_gui_input(Camera *p_camera, const Ref<InputEvent> &p_event);
+	virtual void forward_spatial_draw_over_viewport(Control *p_overlay);
+	virtual void forward_spatial_force_draw_over_viewport(Control *p_overlay);
+
 	virtual String get_name() const;
 	virtual const Ref<Texture> get_icon() const;
 	virtual bool has_main_screen() const;
@@ -222,6 +227,10 @@ public:
 
 	void add_autoload_singleton(const String &p_name, const String &p_path);
 	void remove_autoload_singleton(const String &p_name);
+
+	void set_dir_cache(const String &p_dir) { _dir_cache = p_dir; }
+	String get_dir_cache() { return _dir_cache; }
+	Ref<ConfigFile> get_config();
 
 	EditorPlugin();
 	virtual ~EditorPlugin();

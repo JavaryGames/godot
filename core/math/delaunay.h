@@ -1,7 +1,37 @@
+/*************************************************************************/
+/*  delaunay.h                                                           */
+/*************************************************************************/
+/*                       This file is part of:                           */
+/*                           GODOT ENGINE                                */
+/*                      https://godotengine.org                          */
+/*************************************************************************/
+/* Copyright (c) 2007-2018 Juan Linietsky, Ariel Manzur.                 */
+/* Copyright (c) 2014-2018 Godot Engine contributors (cf. AUTHORS.md)    */
+/*                                                                       */
+/* Permission is hereby granted, free of charge, to any person obtaining */
+/* a copy of this software and associated documentation files (the       */
+/* "Software"), to deal in the Software without restriction, including   */
+/* without limitation the rights to use, copy, modify, merge, publish,   */
+/* distribute, sublicense, and/or sell copies of the Software, and to    */
+/* permit persons to whom the Software is furnished to do so, subject to */
+/* the following conditions:                                             */
+/*                                                                       */
+/* The above copyright notice and this permission notice shall be        */
+/* included in all copies or substantial portions of the Software.       */
+/*                                                                       */
+/* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,       */
+/* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF    */
+/* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.*/
+/* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  */
+/* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,  */
+/* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
+/* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
+/*************************************************************************/
+
 #ifndef DELAUNAY_H
 #define DELAUNAY_H
 
-#include "math_2d.h"
+#include "core/math/rect2.h"
 
 class Delaunay2D {
 public:
@@ -92,7 +122,7 @@ public:
 
 			for (int j = 0; j < triangles.size(); j++) {
 				if (circum_circle_contains(points, triangles[j], i)) {
-					triangles[j].bad = true;
+					triangles.write[j].bad = true;
 					polygon.push_back(Edge(triangles[j].points[0], triangles[j].points[1]));
 					polygon.push_back(Edge(triangles[j].points[1], triangles[j].points[2]));
 					polygon.push_back(Edge(triangles[j].points[2], triangles[j].points[0]));
@@ -109,8 +139,8 @@ public:
 			for (int j = 0; j < polygon.size(); j++) {
 				for (int k = j + 1; k < polygon.size(); k++) {
 					if (edge_compare(points, polygon[j], polygon[k])) {
-						polygon[j].bad = true;
-						polygon[k].bad = true;
+						polygon.write[j].bad = true;
+						polygon.write[k].bad = true;
 					}
 				}
 			}

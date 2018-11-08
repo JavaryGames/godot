@@ -31,12 +31,13 @@
 #ifndef OS_WINDOWS_H
 #define OS_WINDOWS_H
 #include "context_gl_win.h"
+#include "core/os/input.h"
+#include "core/os/os.h"
 #include "core/project_settings.h"
 #include "crash_handler_win.h"
 #include "drivers/rtaudio/audio_driver_rtaudio.h"
 #include "drivers/wasapi/audio_driver_wasapi.h"
-#include "os/input.h"
-#include "os/os.h"
+#include "drivers/winmidi/win_midi.h"
 #include "power_windows.h"
 #include "servers/audio_server.h"
 #include "servers/visual/rasterizer.h"
@@ -124,6 +125,7 @@ class OS_Windows : public OS {
 	bool force_quit;
 	bool window_has_focus;
 	uint32_t last_button_state;
+	bool use_raw_input;
 
 	HCURSOR cursors[CURSOR_MAX] = { NULL };
 	CursorShape cursor_shape;
@@ -144,6 +146,9 @@ class OS_Windows : public OS {
 #ifdef XAUDIO2_ENABLED
 	AudioDriverXAudio2 driver_xaudio2;
 #endif
+#ifdef WINMIDI_ENABLED
+	MIDIDriverWinMidi driver_midi;
+#endif
 
 	CrashHandler crash_handler;
 
@@ -152,7 +157,7 @@ class OS_Windows : public OS {
 
 	void _update_window_style(bool repaint = true);
 
-	// functions used by main to initialize/deintialize the OS
+	// functions used by main to initialize/deinitialize the OS
 protected:
 	virtual int get_current_video_driver() const;
 

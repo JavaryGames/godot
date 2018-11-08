@@ -31,9 +31,9 @@
 #ifndef METHOD_PTRCALL_H
 #define METHOD_PTRCALL_H
 
-#include "math_2d.h"
-#include "typedefs.h"
-#include "variant.h"
+#include "core/math/transform_2d.h"
+#include "core/typedefs.h"
+#include "core/variant.h"
 
 #ifdef PTRCALL_ENABLED
 
@@ -180,7 +180,7 @@ struct PtrToArg<const T *> {
 			{                                                                                    \
 				PoolVector<m_type>::Read r = dvs->read();                                        \
 				for (int i = 0; i < len; i++) {                                                  \
-					ret[i] = r[i];                                                               \
+					ret.write[i] = r[i];                                                         \
 				}                                                                                \
 			}                                                                                    \
 			return ret;                                                                          \
@@ -207,7 +207,7 @@ struct PtrToArg<const T *> {
 			{                                                                                    \
 				PoolVector<m_type>::Read r = dvs->read();                                        \
 				for (int i = 0; i < len; i++) {                                                  \
-					ret[i] = r[i];                                                               \
+					ret.write[i] = r[i];                                                         \
 				}                                                                                \
 			}                                                                                    \
 			return ret;                                                                          \
@@ -225,7 +225,7 @@ struct PtrToArg<const T *> {
 			{                                                                                    \
 				PoolVector<m_type>::Read r = dvs->read();                                        \
 				for (int i = 0; i < len; i++) {                                                  \
-					ret[i] = r[i];                                                               \
+					ret.write[i] = r[i];                                                         \
 				}                                                                                \
 			}                                                                                    \
 			return ret;                                                                          \
@@ -252,7 +252,7 @@ struct PtrToArg<const T *> {
 			{                                                                                    \
 				PoolVector<m_type>::Read r = dvs->read();                                        \
 				for (int i = 0; i < len; i++) {                                                  \
-					ret[i] = r[i];                                                               \
+					ret.write[i] = r[i];                                                         \
 				}                                                                                \
 			}                                                                                    \
 			return ret;                                                                          \
@@ -277,7 +277,7 @@ MAKE_VECARG_ALT(String, StringName);
 			int len = arr->size();                                             \
 			ret.resize(len);                                                   \
 			for (int i = 0; i < len; i++) {                                    \
-				ret[i] = (*arr)[i];                                            \
+				ret.write[i] = (*arr)[i];                                      \
 			}                                                                  \
 			return ret;                                                        \
 		}                                                                      \
@@ -298,7 +298,7 @@ MAKE_VECARG_ALT(String, StringName);
 			int len = arr->size();                                             \
 			ret.resize(len);                                                   \
 			for (int i = 0; i < len; i++) {                                    \
-				ret[i] = (*arr)[i];                                            \
+				ret.write[i] = (*arr)[i];                                      \
 			}                                                                  \
 			return ret;                                                        \
 		}                                                                      \

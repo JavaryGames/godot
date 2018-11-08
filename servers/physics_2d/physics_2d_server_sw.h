@@ -144,6 +144,9 @@ public:
 	virtual void area_attach_object_instance_id(RID p_area, ObjectID p_ID);
 	virtual ObjectID area_get_object_instance_id(RID p_area) const;
 
+	virtual void area_attach_canvas_instance_id(RID p_area, ObjectID p_ID);
+	virtual ObjectID area_get_canvas_instance_id(RID p_area) const;
+
 	virtual void area_set_param(RID p_area, AreaParameter p_param, const Variant &p_value);
 	virtual void area_set_transform(RID p_area, const Transform2D &p_transform);
 
@@ -188,6 +191,9 @@ public:
 	virtual void body_attach_object_instance_id(RID p_body, uint32_t p_ID);
 	virtual uint32_t body_get_object_instance_id(RID p_body) const;
 
+	virtual void body_attach_canvas_instance_id(RID p_body, uint32_t p_ID);
+	virtual uint32_t body_get_canvas_instance_id(RID p_body) const;
+
 	virtual void body_set_continuous_collision_detection_mode(RID p_body, CCDMode p_mode);
 	virtual CCDMode body_get_continuous_collision_detection_mode(RID p_body) const;
 
@@ -209,8 +215,12 @@ public:
 	virtual void body_set_applied_torque(RID p_body, real_t p_torque);
 	virtual real_t body_get_applied_torque(RID p_body) const;
 
+	virtual void body_add_central_force(RID p_body, const Vector2 &p_force);
 	virtual void body_add_force(RID p_body, const Vector2 &p_offset, const Vector2 &p_force);
+	virtual void body_add_torque(RID p_body, real_t p_torque);
 
+	virtual void body_apply_central_impulse(RID p_body, const Vector2 &p_impulse);
+	virtual void body_apply_torque_impulse(RID p_body, real_t p_torque);
 	virtual void body_apply_impulse(RID p_body, const Vector2 &p_pos, const Vector2 &p_impulse);
 	virtual void body_set_axis_velocity(RID p_body, const Vector2 &p_axis_velocity);
 

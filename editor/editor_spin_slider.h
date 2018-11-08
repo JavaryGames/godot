@@ -73,6 +73,8 @@ class EditorSpinSlider : public Range {
 	bool use_custom_label_color;
 	Color custom_label_color;
 
+	void _evaluate_input_text();
+
 protected:
 	void _notification(int p_what);
 	void _gui_input(const Ref<InputEvent> &p_event);
@@ -82,6 +84,8 @@ protected:
 	void _focus_entered();
 
 public:
+	String get_tooltip(const Point2 &p_pos) const;
+
 	String get_text_value() const;
 	void set_label(const String &p_label);
 	String get_label() const;

@@ -31,10 +31,10 @@
 #ifndef VECTOR3_H
 #define VECTOR3_H
 
-#include "math_defs.h"
-#include "math_funcs.h"
-#include "typedefs.h"
-#include "ustring.h"
+#include "core/math/math_defs.h"
+#include "core/math/math_funcs.h"
+#include "core/typedefs.h"
+#include "core/ustring.h"
 
 class Basis;
 
@@ -109,6 +109,8 @@ struct Vector3 {
 	_FORCE_INLINE_ real_t distance_to(const Vector3 &p_b) const;
 	_FORCE_INLINE_ real_t distance_squared_to(const Vector3 &p_b) const;
 
+	_FORCE_INLINE_ Vector3 project(const Vector3 &p_b) const;
+
 	_FORCE_INLINE_ real_t angle_to(const Vector3 &p_b) const;
 
 	_FORCE_INLINE_ Vector3 slide(const Vector3 &p_normal) const;
@@ -148,13 +150,8 @@ struct Vector3 {
 	}
 };
 
-#ifdef VECTOR3_IMPL_OVERRIDE
-
-#include "vector3_inline.h"
-
-#else
-
-#include "matrix3.h"
+// Should be included after class definition, otherwise we get circular refs
+#include "core/math/matrix3.h"
 
 Vector3 Vector3::cross(const Vector3 &p_b) const {
 
@@ -221,7 +218,7 @@ Vector3 Vector3::linear_interpolate(const Vector3 &p_b, real_t p_t) const {
 
 Vector3 Vector3::slerp(const Vector3 &p_b, real_t p_t) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V(is_normalized() == false, Vector3());
+	ERR_FAIL_COND_V(!is_normalized(), Vector3());
 #endif
 
 	real_t theta = angle_to(p_b);
@@ -236,6 +233,10 @@ real_t Vector3::distance_to(const Vector3 &p_b) const {
 real_t Vector3::distance_squared_to(const Vector3 &p_b) const {
 
 	return (p_b - *this).length_squared();
+}
+
+Vector3 Vector3::project(const Vector3 &p_b) const {
+	return p_b * (dot(p_b) / p_b.length_squared());
 }
 
 real_t Vector3::angle_to(const Vector3 &p_b) const {
@@ -429,7 +430,7 @@ void Vector3::zero() {
 // slide returns the component of the vector along the given plane, specified by its normal vector.
 Vector3 Vector3::slide(const Vector3 &p_normal) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V(p_normal.is_normalized() == false, Vector3());
+	ERR_FAIL_COND_V(!p_normal.is_normalized(), Vector3());
 #endif
 	return *this - p_normal * this->dot(p_normal);
 }
@@ -440,11 +441,9 @@ Vector3 Vector3::bounce(const Vector3 &p_normal) const {
 
 Vector3 Vector3::reflect(const Vector3 &p_normal) const {
 #ifdef MATH_CHECKS
-	ERR_FAIL_COND_V(p_normal.is_normalized() == false, Vector3());
+	ERR_FAIL_COND_V(!p_normal.is_normalized(), Vector3());
 #endif
 	return 2.0 * p_normal * this->dot(p_normal) - *this;
 }
-
-#endif
 
 #endif // VECTOR3_H

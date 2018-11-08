@@ -62,6 +62,7 @@ def get_opts():
         EnumVariable('debug_symbols', 'Add debugging symbols to release builds', 'yes', ('yes', 'no', 'full')),
         BoolVariable('separate_debug_symbols', 'Create a separate file containing debugging symbols', False),
         BoolVariable('touch', 'Enable touch events', True),
+        BoolVariable('execinfo', 'Use libexecinfo on systems where glibc is not available', False),
     ]
 
 
@@ -81,14 +82,22 @@ def configure(env):
     if (env["target"] == "release"):
         # -O3 -ffast-math is identical to -Ofast. We need to split it out so we can selectively disable
         # -ffast-math in code for which it generates wrong results.
-        env.Prepend(CCFLAGS=['-O3', '-ffast-math'])
+        if (env["optimize"] == "speed"): #optimize for speed (default)
+            env.Prepend(CCFLAGS=['-O3', '-ffast-math'])
+        else: #optimize for size
+            env.Prepend(CCFLAGS=['-Os'])
+
         if (env["debug_symbols"] == "yes"):
             env.Prepend(CCFLAGS=['-g1'])
         if (env["debug_symbols"] == "full"):
             env.Prepend(CCFLAGS=['-g2'])
 
     elif (env["target"] == "release_debug"):
-        env.Prepend(CCFLAGS=['-O2', '-ffast-math', '-DDEBUG_ENABLED'])
+        if (env["optimize"] == "speed"): #optimize for speed (default)
+            env.Prepend(CCFLAGS=['-O2', '-ffast-math', '-DDEBUG_ENABLED'])
+        else: #optimize for size
+            env.Prepend(CCFLAGS=['-Os', '-DDEBUG_ENABLED'])
+
         if (env["debug_symbols"] == "yes"):
             env.Prepend(CCFLAGS=['-g1'])
         if (env["debug_symbols"] == "full"):
@@ -106,12 +115,12 @@ def configure(env):
 
     ## Compiler configuration
 
-    if 'CXX' in env and 'clang' in env['CXX']:
+    if 'CXX' in env and 'clang' in os.path.basename(env['CXX']):
         # Convenience check to enforce the use_llvm overrides when CXX is clang(++)
         env['use_llvm'] = True
 
     if env['use_llvm']:
-        if ('clang++' not in env['CXX']):
+        if ('clang++' not in os.path.basename(env['CXX'])):
             env["CC"] = "clang"
             env["CXX"] = "clang++"
             env["LINK"] = "clang++"
@@ -240,8 +249,9 @@ def configure(env):
 
     if (os.system("pkg-config --exists alsa") == 0): # 0 means found
         print("Enabling ALSA")
-        env.Append(CPPFLAGS=["-DALSA_ENABLED"])
-        env.ParseConfig('pkg-config alsa --cflags --libs')
+        env.Append(CPPFLAGS=["-DALSA_ENABLED", "-DALSAMIDI_ENABLED"])
+	# Don't parse --cflags, we don't need to add /usr/include/alsa to include path
+        env.ParseConfig('pkg-config alsa --libs')
     else:
         print("ALSA libraries not found, disabling driver")
 
@@ -269,13 +279,16 @@ def configure(env):
         env.ParseConfig('pkg-config zlib --cflags --libs')
 
     env.Append(CPPPATH=['#platform/x11'])
-    env.Append(CPPFLAGS=['-DX11_ENABLED', '-DUNIX_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED', '-DGLES_OVER_GL'])
+    env.Append(CPPFLAGS=['-DX11_ENABLED', '-DUNIX_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED'])
     env.Append(LIBS=['GL', 'pthread'])
 
     if (platform.system() == "Linux"):
         env.Append(LIBS=['dl'])
 
     if (platform.system().find("BSD") >= 0):
+        env["execinfo"] = True
+
+    if env["execinfo"]:
         env.Append(LIBS=['execinfo'])
 
     ## Cross-compilation

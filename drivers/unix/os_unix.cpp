@@ -32,20 +32,16 @@
 
 #ifdef UNIX_ENABLED
 
-#include "servers/visual_server.h"
-
 #include "core/os/thread_dummy.h"
-#include "mutex_posix.h"
-#include "rw_lock_posix.h"
-#include "semaphore_posix.h"
-#include "thread_posix.h"
-
-//#include "core/io/file_access_buffered_fa.h"
-#include "dir_access_unix.h"
-#include "file_access_unix.h"
-#include "packet_peer_udp_posix.h"
-#include "stream_peer_tcp_posix.h"
-#include "tcp_server_posix.h"
+#include "core/project_settings.h"
+#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/file_access_unix.h"
+#include "drivers/unix/mutex_posix.h"
+#include "drivers/unix/net_socket_posix.h"
+#include "drivers/unix/rw_lock_posix.h"
+#include "drivers/unix/semaphore_posix.h"
+#include "drivers/unix/thread_posix.h"
+#include "servers/visual_server.h"
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -56,7 +52,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #endif
-#include "project_settings.h"
+
 #include <assert.h>
 #include <dlfcn.h>
 #include <errno.h>
@@ -153,9 +149,7 @@ void OS_Unix::initialize_core() {
 	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
 
 #ifndef NO_NETWORK
-	TCPServerPosix::make_default();
-	StreamPeerTCPPosix::make_default();
-	PacketPeerUDPPosix::make_default();
+	NetSocketPosix::make_default();
 	IP_Unix::make_default();
 #endif
 
@@ -171,6 +165,8 @@ void OS_Unix::initialize_core() {
 }
 
 void OS_Unix::finalize_core() {
+
+	NetSocketPosix::cleanup();
 }
 
 void OS_Unix::alert(const String &p_alert, const String &p_title) {
@@ -292,6 +288,11 @@ uint64_t OS_Unix::get_ticks_usec() const {
 
 Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, bool p_blocking, ProcessID *r_child_id, String *r_pipe, int *r_exitcode, bool read_stderr) {
 
+#ifdef __EMSCRIPTEN__
+	// Don't compile this code at all to avoid undefined references.
+	// Actual virtual call goes to OS_JavaScript.
+	ERR_FAIL_V(ERR_BUG);
+#else
 	if (p_blocking && r_pipe) {
 
 		String argss;
@@ -358,6 +359,7 @@ Error OS_Unix::execute(const String &p_path, const List<String> &p_arguments, bo
 	}
 
 	return OK;
+#endif
 }
 
 Error OS_Unix::kill(const ProcessID &p_pid) {
@@ -491,9 +493,11 @@ String OS_Unix::get_executable_path() const {
 	//fix for running from a symlink
 	char buf[256];
 	memset(buf, 0, 256);
-	readlink("/proc/self/exe", buf, sizeof(buf));
+	ssize_t len = readlink("/proc/self/exe", buf, sizeof(buf));
 	String b;
-	b.parse_utf8(buf);
+	if (len > 0) {
+		b.parse_utf8(buf, len);
+	}
 	if (b == "") {
 		WARN_PRINT("Couldn't get executable path from /proc/self/exe, using argv[0]");
 		return OS::get_executable_path();

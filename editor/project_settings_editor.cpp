@@ -81,7 +81,8 @@ void ProjectSettingsEditor::_notification(int p_what) {
 			globals_editor->edit(ProjectSettings::get_singleton());
 
 			search_button->set_icon(get_icon("Search", "EditorIcons"));
-			clear_button->set_icon(get_icon("Close", "EditorIcons"));
+			search_box->set_right_icon(get_icon("Search", "EditorIcons"));
+			search_box->set_clear_button_enabled(true);
 
 			action_add_error->add_color_override("font_color", get_color("error_color", "Editor"));
 
@@ -119,7 +120,8 @@ void ProjectSettingsEditor::_notification(int p_what) {
 		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
 
 			search_button->set_icon(get_icon("Search", "EditorIcons"));
-			clear_button->set_icon(get_icon("Close", "EditorIcons"));
+			search_box->set_right_icon(get_icon("Search", "EditorIcons"));
+			search_box->set_clear_button_enabled(true);
 			action_add_error->add_color_override("font_color", get_color("error_color", "Editor"));
 			popup_add->set_item_icon(popup_add->get_item_index(INPUT_KEY), get_icon("Keyboard", "EditorIcons"));
 			popup_add->set_item_icon(popup_add->get_item_index(INPUT_JOY_BUTTON), get_icon("JoyButton", "EditorIcons"));
@@ -213,10 +215,8 @@ void ProjectSettingsEditor::_action_edited() {
 
 		undo_redo->create_action(TTR("Change Action deadzone"));
 		undo_redo->add_do_method(ProjectSettings::get_singleton(), "set", name, new_action);
-		undo_redo->add_do_method(this, "_update_actions");
 		undo_redo->add_do_method(this, "_settings_changed");
 		undo_redo->add_undo_method(ProjectSettings::get_singleton(), "set", name, old_action);
-		undo_redo->add_undo_method(this, "_update_actions");
 		undo_redo->add_undo_method(this, "_settings_changed");
 		undo_redo->commit_action();
 	}
@@ -806,6 +806,10 @@ void ProjectSettingsEditor::popup_project_settings() {
 	plugin_settings->update_plugins();
 }
 
+void ProjectSettingsEditor::update_plugins() {
+	plugin_settings->update_plugins();
+}
+
 void ProjectSettingsEditor::_item_selected(const String &p_path) {
 
 	String selected_path = p_path;
@@ -887,7 +891,6 @@ void ProjectSettingsEditor::_item_del() {
 		return;
 	}
 
-	print_line("to delete.. " + property);
 	undo_redo->create_action(TTR("Delete Item"));
 
 	Variant value = ProjectSettings::get_singleton()->get(property);
@@ -1003,6 +1006,7 @@ void ProjectSettingsEditor::_copy_to_platform_about_to_show() {
 
 	Set<String> presets;
 
+	presets.insert("bptc");
 	presets.insert("s3tc");
 	presets.insert("etc");
 	presets.insert("etc2");
@@ -1462,7 +1466,7 @@ void ProjectSettingsEditor::_update_translations() {
 			t->set_editable(0, true);
 			t->set_tooltip(0, l);
 			t->set_checked(0, l_filter.has(l));
-			translation_filter_treeitems[i] = t;
+			translation_filter_treeitems.write[i] = t;
 		}
 	} else {
 		for (int i = 0; i < s; i++) {
@@ -1502,7 +1506,7 @@ void ProjectSettingsEditor::_update_translations() {
 					if (langnames.length() > 0)
 						langnames += ",";
 					langnames += names[i];
-					translation_locales_idxs_remap[l_idx] = i;
+					translation_locales_idxs_remap.write[l_idx] = i;
 					l_idx++;
 				}
 			}
@@ -1591,15 +1595,6 @@ void ProjectSettingsEditor::_toggle_search_bar(bool p_pressed) {
 	}
 }
 
-void ProjectSettingsEditor::_clear_search_box() {
-
-	if (search_box->get_text() == "")
-		return;
-
-	search_box->clear();
-	globals_editor->get_inspector()->update_tree();
-}
-
 void ProjectSettingsEditor::set_plugins_page() {
 
 	tab_container->set_current_tab(plugin_settings->get_index());
@@ -1662,7 +1657,6 @@ void ProjectSettingsEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_translation_filter_option_changed"), &ProjectSettingsEditor::_translation_filter_option_changed);
 	ClassDB::bind_method(D_METHOD("_translation_filter_mode_changed"), &ProjectSettingsEditor::_translation_filter_mode_changed);
 
-	ClassDB::bind_method(D_METHOD("_clear_search_box"), &ProjectSettingsEditor::_clear_search_box);
 	ClassDB::bind_method(D_METHOD("_toggle_search_bar"), &ProjectSettingsEditor::_toggle_search_bar);
 
 	ClassDB::bind_method(D_METHOD("_copy_to_platform_about_to_show"), &ProjectSettingsEditor::_copy_to_platform_about_to_show);
@@ -1753,19 +1747,12 @@ ProjectSettingsEditor::ProjectSettingsEditor(EditorData *p_data) {
 	search_box->set_h_size_flags(Control::SIZE_EXPAND_FILL);
 	search_bar->add_child(search_box);
 
-	clear_button = memnew(ToolButton);
-	search_bar->add_child(clear_button);
-	clear_button->connect("pressed", this, "_clear_search_box");
-
 	globals_editor = memnew(SectionedInspector);
 	props_base->add_child(globals_editor);
 	globals_editor->get_inspector()->set_undo_redo(EditorNode::get_singleton()->get_undo_redo());
-	globals_editor->get_inspector()->set_property_selectable(true);
-	//globals_editor->hide_top_label();
 	globals_editor->set_v_size_flags(Control::SIZE_EXPAND_FILL);
 	globals_editor->register_search_box(search_box);
 	globals_editor->get_inspector()->connect("property_selected", this, "_item_selected");
-	//globals_editor->get_inspector()->connect("property_toggled", this, "_item_checked", varray(), CONNECT_DEFERRED);
 	globals_editor->get_inspector()->connect("property_edited", this, "_settings_prop_edited");
 	globals_editor->get_inspector()->connect("restart_requested", this, "_editor_restart_request");
 
@@ -1853,9 +1840,9 @@ ProjectSettingsEditor::ProjectSettingsEditor(EditorData *p_data) {
 	input_editor->set_column_title(0, TTR("Action"));
 	input_editor->set_column_title(1, TTR("Deadzone"));
 	input_editor->set_column_expand(1, false);
-	input_editor->set_column_min_width(1, 80);
+	input_editor->set_column_min_width(1, 80 * EDSCALE);
 	input_editor->set_column_expand(2, false);
-	input_editor->set_column_min_width(2, 50);
+	input_editor->set_column_min_width(2, 50 * EDSCALE);
 	input_editor->connect("item_edited", this, "_action_edited");
 	input_editor->connect("item_activated", this, "_action_activated");
 	input_editor->connect("cell_selected", this, "_action_selected");

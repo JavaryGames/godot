@@ -76,6 +76,7 @@ public:
 			bool marked : 1;
 			bool breakpoint : 1;
 			bool hidden : 1;
+			bool safe : 1;
 			int wrap_amount_cache : 24;
 			Map<int, ColorRegionInfo> region_info;
 			String data;
@@ -100,12 +101,14 @@ public:
 		int get_line_wrap_amount(int p_line) const;
 		const Map<int, ColorRegionInfo> &get_color_region_info(int p_line) const;
 		void set(int p_line, const String &p_text);
-		void set_marked(int p_line, bool p_marked) { text[p_line].marked = p_marked; }
+		void set_marked(int p_line, bool p_marked) { text.write[p_line].marked = p_marked; }
 		bool is_marked(int p_line) const { return text[p_line].marked; }
-		void set_breakpoint(int p_line, bool p_breakpoint) { text[p_line].breakpoint = p_breakpoint; }
+		void set_breakpoint(int p_line, bool p_breakpoint) { text.write[p_line].breakpoint = p_breakpoint; }
 		bool is_breakpoint(int p_line) const { return text[p_line].breakpoint; }
-		void set_hidden(int p_line, bool p_hidden) { text[p_line].hidden = p_hidden; }
+		void set_hidden(int p_line, bool p_hidden) { text.write[p_line].hidden = p_hidden; }
 		bool is_hidden(int p_line) const { return text[p_line].hidden; }
+		void set_safe(int p_line, bool p_safe) { text.write[p_line].safe = p_safe; }
+		bool is_safe(int p_line) const { return text[p_line].safe; }
 		void insert(int p_at, const String &p_text);
 		void remove(int p_at);
 		int size() const { return text.size(); }
@@ -165,6 +168,7 @@ private:
 		Color caret_color;
 		Color caret_background_color;
 		Color line_number_color;
+		Color safe_line_number_color;
 		Color font_color;
 		Color font_selected_color;
 		Color keyword_color;
@@ -189,7 +193,6 @@ private:
 		int line_number_w;
 		int breakpoint_gutter_width;
 		int fold_gutter_width;
-		Size2 size;
 	} cache;
 
 	Map<int, int> color_region_cache;
@@ -303,8 +306,6 @@ private:
 	float target_v_scroll;
 	float v_scroll_speed;
 
-	bool raised_from_completion;
-
 	String highlighted_word;
 
 	uint64_t last_dblclk;
@@ -369,6 +370,7 @@ private:
 	void _update_selection_mode_word();
 	void _update_selection_mode_line();
 
+	void _uncomment_line(int p_line);
 	void _scroll_up(real_t p_delta);
 	void _scroll_down(real_t p_delta);
 
@@ -472,6 +474,8 @@ public:
 	void set_line_as_marked(int p_line, bool p_marked);
 	void set_line_as_breakpoint(int p_line, bool p_breakpoint);
 	bool is_line_set_as_breakpoint(int p_line) const;
+	void set_line_as_safe(int p_line, bool p_safe);
+	bool is_line_set_as_safe(int p_line) const;
 	void get_breakpoints(List<int> *p_breakpoints) const;
 	Array get_breakpoints_array() const;
 	void remove_breakpoints();

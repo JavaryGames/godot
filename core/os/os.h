@@ -31,13 +31,14 @@
 #ifndef OS_H
 #define OS_H
 
-#include "engine.h"
-#include "image.h"
-#include "io/logger.h"
-#include "list.h"
-#include "os/main_loop.h"
-#include "ustring.h"
-#include "vector.h"
+#include "core/engine.h"
+#include "core/image.h"
+#include "core/io/logger.h"
+#include "core/list.h"
+#include "core/os/main_loop.h"
+#include "core/ustring.h"
+#include "core/vector.h"
+
 #include <stdarg.h>
 
 /**
@@ -128,7 +129,7 @@ protected:
 
 	RenderThreadMode _render_thread_mode;
 
-	// functions used by main to initialize/deintialize the OS
+	// functions used by main to initialize/deinitialize the OS
 	void add_logger(Logger *p_logger);
 
 	virtual void initialize_core() = 0;
@@ -188,6 +189,10 @@ public:
 	virtual int get_current_video_driver() const = 0;
 	virtual int get_audio_driver_count() const;
 	virtual const char *get_audio_driver_name(int p_driver) const;
+
+	virtual PoolStringArray get_connected_midi_inputs();
+	virtual void open_midi_inputs();
+	virtual void close_midi_inputs();
 
 	virtual int get_screen_count() const { return 1; }
 	virtual int get_current_screen() const { return 0; }

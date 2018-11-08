@@ -31,11 +31,12 @@
 #include "editor_file_server.h"
 
 #include "../editor_settings.h"
-#include "io/marshalls.h"
+#include "core/io/marshalls.h"
 
 //#define DEBUG_PRINT(m_p) print_line(m_p)
 //#define DEBUG_TIME(m_what) printf("MS: %s - %lu\n", m_what, OS::get_singleton()->get_ticks_usec());
 
+#define DEBUG_PRINT(m_what)
 #define DEBUG_TIME(m_what)
 
 void EditorFileServer::_close_client(ClientData *cd) {
@@ -78,7 +79,7 @@ void EditorFileServer::_subthread_start(void *s) {
 			_close_client(cd);
 			ERR_FAIL_COND(err != OK);
 		}
-		passutf8[passlen] = 0;
+		passutf8.write[passlen] = 0;
 		String s;
 		s.parse_utf8(passutf8.ptr());
 		if (s != cd->efs->password) {
@@ -107,7 +108,6 @@ void EditorFileServer::_subthread_start(void *s) {
 
 		//wait for ID
 		err = cd->connection->get_data(buf4, 4);
-		//#define DEBUG_PRINT(m_p) print_line(m_p)
 		DEBUG_TIME("get_data")
 
 		if (err != OK) {
@@ -145,7 +145,7 @@ void EditorFileServer::_subthread_start(void *s) {
 					_close_client(cd);
 					ERR_FAIL_COND(err != OK);
 				}
-				fileutf8[namelen] = 0;
+				fileutf8.write[namelen] = 0;
 				String s;
 				s.parse_utf8(fileutf8.ptr());
 
@@ -336,7 +336,7 @@ void EditorFileServer::stop() {
 
 EditorFileServer::EditorFileServer() {
 
-	server = TCP_Server::create_ref();
+	server.instance();
 	wait_mutex = Mutex::create();
 	quit = false;
 	active = false;

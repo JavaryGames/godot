@@ -31,10 +31,10 @@
 #ifndef RASTERIZER_H
 #define RASTERIZER_H
 
-#include "camera_matrix.h"
+#include "core/math/camera_matrix.h"
 #include "servers/visual_server.h"
 
-#include "self_list.h"
+#include "core/self_list.h"
 
 #include "scene/resources/texture.h"
 
@@ -106,10 +106,12 @@ public:
 
 		VS::ShadowCastingSetting cast_shadows;
 
+		//fit in 32 bits
 		bool mirror : 8;
 		bool receive_shadows : 8;
 		bool visible : 8;
-		bool baked_light : 8; //this flag is only to know if it actually did use baked light
+		bool baked_light : 4; //this flag is only to know if it actually did use baked light
+		bool redraw_if_visible : 4;
 
 		float depth; //used for sorting
 
@@ -133,6 +135,7 @@ public:
 			depth_layer = 0;
 			layer_mask = 1;
 			baked_light = false;
+			redraw_if_visible = false;
 			lightmap_capture = NULL;
 		}
 	};
@@ -175,17 +178,34 @@ public:
 	/* TEXTURE API */
 
 	virtual RID texture_create() = 0;
-	virtual void texture_allocate(RID p_texture, int p_width, int p_height, Image::Format p_format, uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT) = 0;
-	virtual void texture_set_data(RID p_texture, const Ref<Image> &p_image, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) = 0;
-	virtual void texture_set_data_partial(RID p_texture, const Ref<Image> &p_image, int src_x, int src_y, int src_w, int src_h, int dst_x, int dst_y, int p_dst_mip, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) = 0;
-	virtual Ref<Image> texture_get_data(RID p_texture, VS::CubeMapSide p_cube_side = VS::CUBEMAP_LEFT) const = 0;
+	virtual void texture_allocate(RID p_texture,
+			int p_width,
+			int p_height,
+			int p_depth_3d,
+			Image::Format p_format,
+			VS::TextureType p_type,
+			uint32_t p_flags = VS::TEXTURE_FLAGS_DEFAULT) = 0;
+
+	virtual void texture_set_data(RID p_texture, const Ref<Image> &p_image, int p_level = 0) = 0;
+
+	virtual void texture_set_data_partial(RID p_texture,
+			const Ref<Image> &p_image,
+			int src_x, int src_y,
+			int src_w, int src_h,
+			int dst_x, int dst_y,
+			int p_dst_mip,
+			int p_level = 0) = 0;
+
+	virtual Ref<Image> texture_get_data(RID p_texture, int p_level = 0) const = 0;
 	virtual void texture_set_flags(RID p_texture, uint32_t p_flags) = 0;
 	virtual uint32_t texture_get_flags(RID p_texture) const = 0;
 	virtual Image::Format texture_get_format(RID p_texture) const = 0;
+	virtual VS::TextureType texture_get_type(RID p_texture) const = 0;
 	virtual uint32_t texture_get_texid(RID p_texture) const = 0;
 	virtual uint32_t texture_get_width(RID p_texture) const = 0;
 	virtual uint32_t texture_get_height(RID p_texture) const = 0;
-	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height) = 0;
+	virtual uint32_t texture_get_depth(RID p_texture) const = 0;
+	virtual void texture_set_size_override(RID p_texture, int p_width, int p_height, int p_depth_3d) = 0;
 
 	virtual void texture_set_path(RID p_texture, const String &p_path) = 0;
 	virtual String texture_get_path(RID p_texture) const = 0;
@@ -231,6 +251,7 @@ public:
 
 	virtual void material_set_param(RID p_material, const StringName &p_param, const Variant &p_value) = 0;
 	virtual Variant material_get_param(RID p_material, const StringName &p_param) const = 0;
+	virtual Variant material_get_param_default(RID p_material, const StringName &p_param) const = 0;
 
 	virtual void material_set_line_width(RID p_material, float p_width) = 0;
 
@@ -279,6 +300,7 @@ public:
 	virtual AABB mesh_get_custom_aabb(RID p_mesh) const = 0;
 
 	virtual AABB mesh_get_aabb(RID p_mesh, RID p_skeleton) const = 0;
+
 	virtual void mesh_clear(RID p_mesh) = 0;
 
 	/* MULTIMESH API */
@@ -377,6 +399,7 @@ public:
 	virtual RID reflection_probe_create() = 0;
 
 	virtual void reflection_probe_set_update_mode(RID p_probe, VS::ReflectionProbeUpdateMode p_mode) = 0;
+	virtual void reflection_probe_set_resolution(RID p_probe, int p_resolution) = 0;
 	virtual void reflection_probe_set_intensity(RID p_probe, float p_intensity) = 0;
 	virtual void reflection_probe_set_interior_ambient(RID p_probe, const Color &p_ambient) = 0;
 	virtual void reflection_probe_set_interior_ambient_energy(RID p_probe, float p_energy) = 0;
@@ -782,8 +805,6 @@ public:
 			RID particles;
 			RID texture;
 			RID normal_map;
-			int h_frames;
-			int v_frames;
 			CommandParticles() { type = TYPE_PARTICLES; }
 		};
 
@@ -820,6 +841,7 @@ public:
 		bool clip;
 		bool visible;
 		bool behind;
+		bool update_when_visible;
 		//VS::MaterialBlendMode blend_mode;
 		int light_mask;
 		Vector<Command *> commands;
@@ -1021,6 +1043,7 @@ public:
 			copy_back_buffer = NULL;
 			distance_field = false;
 			light_masked = false;
+			update_when_visible = false;
 		}
 		virtual ~Item() {
 			clear();
@@ -1079,13 +1102,16 @@ public:
 	virtual void set_boot_image(const Ref<Image> &p_image, const Color &p_color, bool p_scale) = 0;
 
 	virtual void initialize() = 0;
-	virtual void begin_frame() = 0;
+	virtual void begin_frame(double frame_step) = 0;
 	virtual void set_current_render_target(RID p_render_target) = 0;
 	virtual void restore_render_target() = 0;
 	virtual void clear_render_target(const Color &p_color) = 0;
 	virtual void blit_render_target_to_screen(RID p_render_target, const Rect2 &p_screen_rect, int p_screen = 0) = 0;
+	virtual void output_lens_distorted_to_screen(RID p_render_target, const Rect2 &p_screen_rect, float p_k1, float p_k2, const Vector2 &p_eye_center, float p_oversample) = 0;
 	virtual void end_frame(bool p_swap_buffers) = 0;
 	virtual void finalize() = 0;
+
+	virtual bool is_low_end() const = 0;
 
 	virtual ~Rasterizer() {}
 };

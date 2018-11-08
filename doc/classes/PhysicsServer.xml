@@ -294,6 +294,16 @@
 				Sets the transform matrix for an area.
 			</description>
 		</method>
+		<method name="body_add_central_force">
+			<return type="void">
+			</return>
+			<argument index="0" name="body" type="RID">
+			</argument>
+			<argument index="1" name="force" type="Vector3">
+			</argument>
+			<description>
+			</description>
+		</method>
 		<method name="body_add_collision_exception">
 			<return type="void">
 			</return>
@@ -303,6 +313,18 @@
 			</argument>
 			<description>
 				Adds a body to the list of bodies exempt from collisions.
+			</description>
+		</method>
+		<method name="body_add_force">
+			<return type="void">
+			</return>
+			<argument index="0" name="body" type="RID">
+			</argument>
+			<argument index="1" name="force" type="Vector3">
+			</argument>
+			<argument index="2" name="position" type="Vector3">
+			</argument>
+			<description>
 			</description>
 		</method>
 		<method name="body_add_shape">
@@ -316,6 +338,26 @@
 			</argument>
 			<description>
 				Adds a shape to the body, along with a transform matrix. Shapes are usually referenced by their index, so you should track which shape has a given index.
+			</description>
+		</method>
+		<method name="body_add_torque">
+			<return type="void">
+			</return>
+			<argument index="0" name="body" type="RID">
+			</argument>
+			<argument index="1" name="torque" type="Vector3">
+			</argument>
+			<description>
+			</description>
+		</method>
+		<method name="body_apply_central_impulse">
+			<return type="void">
+			</return>
+			<argument index="0" name="body" type="RID">
+			</argument>
+			<argument index="1" name="impulse" type="Vector3">
+			</argument>
+			<description>
 			</description>
 		</method>
 		<method name="body_apply_impulse">
@@ -1218,7 +1260,7 @@
 			The higher, the stronger.
 		</constant>
 		<constant name="PIN_JOINT_IMPULSE_CLAMP" value="2" enum="PinJointParam">
-			If above 0, this value is the maximum value for an impulse that this Joint puts on it's ends.
+			If above 0, this value is the maximum value for an impulse that this Joint puts on its ends.
 		</constant>
 		<constant name="HINGE_JOINT_BIAS" value="0" enum="HingeJointParam">
 			The speed with which the two bodies get pulled together when they move in different directions.
@@ -1476,9 +1518,7 @@
 		<constant name="BODY_MODE_RIGID" value="2" enum="BodyMode">
 			Constant for rigid bodies.
 		</constant>
-		<constant name="BODY_MODE_SOFT" value="3" enum="BodyMode">
-		</constant>
-		<constant name="BODY_MODE_CHARACTER" value="4" enum="BodyMode">
+		<constant name="BODY_MODE_CHARACTER" value="3" enum="BodyMode">
 			Constant for rigid bodies in character mode. In this mode, a body can not rotate, and only its linear velocity is affected by physics.
 		</constant>
 		<constant name="BODY_PARAM_BOUNCE" value="0" enum="BodyParameter">

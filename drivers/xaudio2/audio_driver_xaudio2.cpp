@@ -30,8 +30,8 @@
 
 #include "audio_driver_xaudio2.h"
 
-#include "os/os.h"
-#include "project_settings.h"
+#include "core/os/os.h"
+#include "core/project_settings.h"
 
 const char *AudioDriverXAudio2::get_name() const {
 	return "XAudio2";
@@ -96,8 +96,6 @@ Error AudioDriverXAudio2::init() {
 void AudioDriverXAudio2::thread_func(void *p_udata) {
 
 	AudioDriverXAudio2 *ad = (AudioDriverXAudio2 *)p_udata;
-
-	uint64_t usdelay = (ad->buffer_size / float(ad->mix_rate)) * 1000000;
 
 	while (!ad->exit_thread) {
 
