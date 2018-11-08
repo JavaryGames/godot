@@ -34,9 +34,9 @@
 #include "io/marshalls.h"
 
 //#define DEBUG_PRINT(m_p) print_line(m_p)
-#define DEBUG_TIME(m_what) printf("MS: %s - %lu\n", m_what, OS::get_singleton()->get_ticks_usec());
+//#define DEBUG_TIME(m_what) printf("MS: %s - %lu\n", m_what, OS::get_singleton()->get_ticks_usec());
 
-//#define DEBUG_TIME(m_what)
+#define DEBUG_TIME(m_what)
 
 void EditorFileServer::_close_client(ClientData *cd) {
 
@@ -149,14 +149,16 @@ void EditorFileServer::_subthread_start(void *s) {
 				String s;
 				s.parse_utf8(fileutf8.ptr());
 
-				if (cmd == FileAccessNetwork::COMMAND_FILE_EXISTS) {
-					print_line("FILE EXISTS: " + s);
-				}
-				if (cmd == FileAccessNetwork::COMMAND_GET_MODTIME) {
-					print_line("MOD TIME: " + s);
-				}
-				if (cmd == FileAccessNetwork::COMMAND_OPEN_FILE) {
-					print_line("OPEN: " + s);
+				if (OS::get_singleton()->is_stdout_verbose()) {
+					if (cmd == FileAccessNetwork::COMMAND_FILE_EXISTS) {
+						print_line("FILE EXISTS: " + s);
+					}
+					if (cmd == FileAccessNetwork::COMMAND_GET_MODTIME) {
+						print_line("MOD TIME: " + s);
+					}
+					if (cmd == FileAccessNetwork::COMMAND_OPEN_FILE) {
+						print_line("OPEN: " + s);
+					}
 				}
 
 				if (!s.begins_with("res://")) {
@@ -243,7 +245,9 @@ void EditorFileServer::_subthread_start(void *s) {
 				int read = cd->files[id]->get_buffer(buf.ptrw(), blocklen);
 				ERR_CONTINUE(read < 0);
 
-				print_line("GET BLOCK - offset: " + itos(offset) + ", blocklen: " + itos(blocklen));
+				if (OS::get_singleton()->is_stdout_verbose()) {
+					print_line("GET BLOCK - offset: " + itos(offset) + ", blocklen: " + itos(blocklen));
+				}
 
 				//not found, continue
 				encode_uint32(id, buf4);
@@ -259,7 +263,9 @@ void EditorFileServer::_subthread_start(void *s) {
 			} break;
 			case FileAccessNetwork::COMMAND_CLOSE: {
 
-				print_line("CLOSED");
+				if (OS::get_singleton()->is_stdout_verbose()) {
+					print_line("CLOSED");
+				}
 				ERR_CONTINUE(!cd->files.has(id));
 				memdelete(cd->files[id]);
 				cd->files.erase(id);
