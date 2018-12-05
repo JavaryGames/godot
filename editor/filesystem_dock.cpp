@@ -1805,13 +1805,18 @@ void FileSystemDock::_update_import_dock() {
 			continue;
 
 		String fpath = files->get_item_metadata(i);
-		if (!FileAccess::exists(fpath + ".import")) {
-			imports.clear();
-			break;
+		String import_path = fpath + ".import";
+		if (!FileAccess::exists(import_path)) {
+			// Try default file
+			import_path = ResourceFormatImporter::get_singleton()->get_import_base_path(fpath) + ".import";
+			if (!FileAccess::exists(import_path)) {
+				imports.clear();
+				break;
+			}
 		}
 		Ref<ConfigFile> cf;
 		cf.instance();
-		Error err = cf->load(fpath + ".import");
+		Error err = cf->load(import_path);
 		if (err != OK) {
 			imports.clear();
 			break;
