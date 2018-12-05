@@ -721,11 +721,16 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 		String path = E->get();
 		String type = ResourceLoader::get_resource_type(path);
 
-		if (FileAccess::exists(path + ".import")) {
+		String import_config_path = path + ".import";
+		if (!FileAccess::exists(import_config_path)) {
+			import_config_path = ResourceFormatImporter::get_singleton()->get_import_base_path(path) + ".import";
+		}
+
+		if (FileAccess::exists(import_config_path)) {
 			//file is imported, replace by what it imports
 			Ref<ConfigFile> config;
 			config.instance();
-			Error err = config->load(path + ".import");
+			Error err = config->load(import_config_path);
 			if (err != OK) {
 				ERR_PRINTS("Could not parse: '" + path + "', not exported.");
 				continue;
@@ -768,7 +773,7 @@ Error EditorExportPlatform::export_project_files(const Ref<EditorExportPreset> &
 			}
 
 			//also save the .import file
-			Vector<uint8_t> array = FileAccess::get_file_as_array(path + ".import");
+			Vector<uint8_t> array = FileAccess::get_file_as_array(import_config_path);
 			p_func(p_udata, path + ".import", array, idx, total);
 
 		} else {
