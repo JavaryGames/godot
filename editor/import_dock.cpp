@@ -78,8 +78,11 @@ void ImportDock::set_edit_path(const String &p_path) {
 	config.instance();
 	Error err = config->load(p_path + ".import");
 	if (err != OK) {
-		clear();
-		return;
+		err = config->load(ResourceFormatImporter::get_singleton()->get_import_base_path(p_path) + ".import");
+		if (err != OK) {
+			clear();
+			return;
+		}
 	}
 
 	params->importer = ResourceFormatImporter::get_singleton()->get_importer_by_name(config->get_value("remap", "importer"));
@@ -168,8 +171,15 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 
 		Ref<ConfigFile> config;
 		config.instance();
-		Error err = config->load(p_paths[i] + ".import");
-		ERR_CONTINUE(err != OK);
+		String import_config_path = p_paths[i] + ".import";
+		Error err = config->load(import_config_path);
+
+		if (err != OK) {
+			import_config_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_paths[i]) + ".import";
+			Error err = config->load(import_config_path);
+
+			ERR_CONTINUE(err != OK);
+		}
 
 		if (i == 0) {
 			params->importer = ResourceFormatImporter::get_singleton()->get_importer_by_name(config->get_value("remap", "importer"));
@@ -279,9 +289,14 @@ void ImportDock::_importer_selected(int i_idx) {
 	Ref<ConfigFile> config;
 	if (params->paths.size()) {
 		config.instance();
-		Error err = config->load(params->paths[0] + ".import");
+		String import_config_file = params->paths[0] + ".import";
+		Error err = config->load(import_config_file);
 		if (err != OK) {
-			config.unref();
+			import_config_file = ResourceFormatImporter::get_singleton()->get_import_base_path(params->paths[0]) + ".import";
+			err = config->load(import_config_file);
+			if (err != OK) {
+				config.unref();
+			}
 		}
 	}
 	_update_options(config);
@@ -357,7 +372,12 @@ void ImportDock::_reimport() {
 
 		Ref<ConfigFile> config;
 		config.instance();
-		Error err = config->load(params->paths[i] + ".import");
+		String import_config_path = params->paths[i] + ".import";
+		Error err = config->load(import_config_path);
+		if (err != OK) {
+			import_config_path = ResourceFormatImporter::get_singleton()->get_import_base_path(params->paths[i]) + ".import";
+			err = config->load(import_config_path);
+		}
 		ERR_CONTINUE(err != OK);
 
 		config->set_value("remap", "importer", params->importer->get_importer_name());
@@ -367,7 +387,7 @@ void ImportDock::_reimport() {
 			config->set_value("params", E->get().name, params->values[E->get().name]);
 		}
 
-		config->save(params->paths[i] + ".import");
+		config->save(import_config_path);
 	}
 
 	EditorFileSystem::get_singleton()->reimport_files(params->paths);
