@@ -43,10 +43,13 @@ Error ResourceFormatImporter::_get_path_and_type(const String &p_path, PathAndTy
 	FileAccess *f = FileAccess::open(p_path + ".import", FileAccess::READ, &err);
 
 	if (!f) {
-		if (r_valid) {
-			*r_valid = false;
+		f = FileAccess::open(get_import_base_path(p_path) + ".import", FileAccess::READ, &err);
+		if (!f) {
+			if (r_valid) {
+				*r_valid = false;
+			}
+			return err;
 		}
-		return err;
 	}
 
 	VariantParser::StreamFile stream;
@@ -190,7 +193,10 @@ bool ResourceFormatImporter::exists(const String &p_path) const {
 
 bool ResourceFormatImporter::recognize_path(const String &p_path, const String &p_for_type) const {
 
-	return FileAccess::exists(p_path + ".import");
+	if (FileAccess::exists(p_path + ".import")) {
+		return true;
+	}
+	return FileAccess::exists(get_import_base_path(p_path) + ".import");
 }
 
 bool ResourceFormatImporter::can_be_imported(const String &p_path) const {
@@ -202,7 +208,7 @@ int ResourceFormatImporter::get_import_order(const String &p_path) const {
 
 	Ref<ResourceImporter> importer;
 
-	if (FileAccess::exists(p_path + ".import")) {
+	if (FileAccess::exists(p_path + ".import") || FileAccess::exists(get_import_base_path(p_path) + ".import")) {
 
 		PathAndType pat;
 		Error err = _get_path_and_type(p_path, pat);
