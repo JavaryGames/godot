@@ -1614,14 +1614,19 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		}
 	}
 
-	if (load_default && ProjectSettings::get_singleton()->has_setting("importer_defaults/" + importer->get_importer_name())) {
+	bool has_custom_defaults = ProjectSettings::get_singleton()->has_setting("importer_defaults/" + importer->get_importer_name());
+	Dictionary custom_defaults;
+	if (has_custom_defaults) {
+		custom_defaults = ProjectSettings::get_singleton()->get("importer_defaults/" + importer->get_importer_name());
+	}
+
+	if (load_default && has_custom_defaults) {
 		//use defaults if exist
-		Dictionary d = ProjectSettings::get_singleton()->get("importer_defaults/" + importer->get_importer_name());
 		List<Variant> v;
-		d.get_key_list(&v);
+		custom_defaults.get_key_list(&v);
 
 		for (List<Variant>::Element *E = v.front(); E; E = E->next()) {
-			params[E->get()] = d[E->get()];
+			params[E->get()] = custom_defaults[E->get()];
 		}
 	}
 
@@ -1715,7 +1720,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
 
 			String base = E->get().option.name;
-			if (params[base] == E->get().default_value) {
+			if ((!has_custom_defaults && params[base] == E->get().default_value) || (has_custom_defaults && params[base] == custom_defaults[base])) {
 				// Skip default values
 				continue;
 			}
