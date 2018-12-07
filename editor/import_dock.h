@@ -36,6 +36,7 @@
 #include "editor/editor_file_system.h"
 #include "editor/editor_inspector.h"
 #include "scene/gui/box_container.h"
+#include "scene/gui/check_box.h"
 #include "scene/gui/menu_button.h"
 #include "scene/gui/option_button.h"
 #include "scene/gui/popup_menu.h"
@@ -53,6 +54,7 @@ class ImportDock : public VBoxContainer {
 	Map<StringName, Variant> property_values;
 
 	Button *import;
+	CheckBox *force_save;
 
 	ImportDockParameters *params;
 
