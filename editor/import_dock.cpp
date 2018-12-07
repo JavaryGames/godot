@@ -133,11 +133,18 @@ void ImportDock::set_edit_path(const String &p_path) {
 		}
 	}
 
+	bool force_save_status = false;
+	if (config->has_section_key("remap", "force_save")) {
+		force_save_status = config->get_value("remap", "force_save");
+	}
+
 	params->paths.clear();
 	params->paths.push_back(p_path);
 	import->set_disabled(false);
 	import_as->set_disabled(false);
 	preset->set_disabled(false);
+	force_save->set_disabled(false);
+	force_save->set_pressed(force_save_status);
 
 	imported->set_text(p_path.get_file());
 }
@@ -156,6 +163,11 @@ void ImportDock::_update_options(const Ref<ConfigFile> &p_config) {
 	Dictionary custom_defaults;
 	if (has_custom_defaults) {
 		custom_defaults = ProjectSettings::get_singleton()->get("importer_defaults/" + params->importer->get_importer_name());
+	}
+
+	if (p_config->has_section_key("remap", "force_save")) {
+		bool force_save_status = p_config->get_value("remap", "force_save");
+		this->force_save->set_pressed(force_save_status);
 	}
 
 	for (List<ResourceImporter::ImportOption>::Element *E = options.front(); E; E = E->next()) {
@@ -195,6 +207,8 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 
 	clear();
 
+	bool force_save_status = false;
+
 	//use the value that is repeated the mot
 	Map<String, Dictionary> value_frequency;
 
@@ -218,6 +232,10 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 				clear();
 				return;
 			}
+		}
+
+		if (config->has_section_key("remap", "force_save")) {
+			force_save_status = config->get_value("remap", "force_save");
 		}
 
 		if (config->has_section("params")) {
@@ -319,6 +337,8 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 	import->set_disabled(false);
 	import_as->set_disabled(false);
 	preset->set_disabled(false);
+	force_save->set_disabled(false);
+	force_save->set_pressed(force_save_status);
 
 	imported->set_text(itos(p_paths.size()) + TTR(" Files"));
 }
@@ -405,6 +425,8 @@ void ImportDock::clear() {
 	import_as->clear();
 	import_as->set_disabled(true);
 	preset->set_disabled(true);
+	force_save->set_pressed(false);
+	force_save->set_disabled(true);
 	params->values.clear();
 	params->properties.clear();
 	params->update();
@@ -476,6 +498,8 @@ void ImportDock::_reimport() {
 		custom_default = ProjectSettings::get_singleton()->get("importer_defaults/" + params->importer->get_importer_name());
 	}
 
+	bool force_save_status = force_save->is_pressed();
+
 	List<ResourceImporter::ImportOption> import_options;
 	List<StringName> non_default_options;
 	params->importer->get_import_options(&import_options);
@@ -483,7 +507,7 @@ void ImportDock::_reimport() {
 	for (List<ResourceImporter::ImportOption>::Element *E = import_options.front(); E; E = E->next()) {
 		String prop_name = E->get().option.name;
 		Variant value = params->values[prop_name];
-		if ((!has_custom_default && value != E->get().default_value) || (has_custom_default && value != custom_default[prop_name])) {
+		if (force_save_status || (!has_custom_default && value != E->get().default_value) || (has_custom_default && value != custom_default[prop_name])) {
 			non_default_options.push_back(prop_name);
 		}
 	}
@@ -537,7 +561,7 @@ void ImportDock::_reimport() {
 		da->remove(import_config_path);
 
 		config->set_value("remap", "importer", importer_name);
-		config->erase_section("params");
+		config->set_value("remap", "force_save", force_save_status);
 
 		for (List<StringName>::Element *E = non_default_options.front(); E; E = E->next()) {
 			config->set_value("params", E->get(), params->values[E->get()]);
@@ -623,10 +647,17 @@ ImportDock::ImportDock() {
 
 	hb = memnew(HBoxContainer);
 	add_child(hb);
+	force_save = memnew(CheckBox);
+	force_save->set_text(TTR("Force save"));
+	force_save->set_tooltip(TTR("Save settings even if they are default"));
+	force_save->set_disabled(true);
 	import = memnew(Button);
 	import->set_text(TTR("Reimport"));
 	import->set_disabled(true);
 	import->connect("pressed", this, "_reimport_attempt");
+	import->set_disabled(true);
+	hb->add_spacer();
+	hb->add_child(force_save);
 	hb->add_spacer();
 	hb->add_child(import);
 	hb->add_spacer();
