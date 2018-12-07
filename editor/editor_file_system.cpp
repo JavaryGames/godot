@@ -1564,27 +1564,29 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	//mix with default params, in case a parameter is missing
 
-	List<ResourceImporter::ImportOption> opts;
-	importer->get_import_options(&opts);
-	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
-		if (!params.has(E->get().option.name)) { //this one is not present
-			params[E->get().option.name] = E->get().default_value;
-		}
-	}
-
 	bool has_custom_defaults = ProjectSettings::get_singleton()->has_setting("importer_defaults/" + importer->get_importer_name());
 	Dictionary custom_defaults;
 	if (has_custom_defaults) {
 		custom_defaults = ProjectSettings::get_singleton()->get("importer_defaults/" + importer->get_importer_name());
 	}
 
-	if (load_default && has_custom_defaults) {
+	if (has_custom_defaults) {
 		//use defaults if exist
 		List<Variant> v;
 		custom_defaults.get_key_list(&v);
 
 		for (List<Variant>::Element *E = v.front(); E; E = E->next()) {
-			params[E->get()] = custom_defaults[E->get()];
+			if (!params.has(E->get())) { //this one is not present
+				params[E->get()] = custom_defaults[E->get()];
+			}
+		}
+	}
+
+	List<ResourceImporter::ImportOption> opts;
+	importer->get_import_options(&opts);
+	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
+		if (!params.has(E->get().option.name)) { //this one is not present
+			params[E->get().option.name] = E->get().default_value;
 		}
 	}
 
@@ -1664,7 +1666,17 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		f->store_line("dest_files=" + Variant(dp).get_construct_string() + "\n");
 	}
 
-	if (!load_default) {
+	// Check if all settings are default
+	bool all_is_default = true;
+	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
+		String base = E->get().option.name;
+		if ((!has_custom_defaults && params[base] != E->get().default_value) || (has_custom_defaults && params[base] != custom_defaults[base])) {
+			all_is_default = false;
+			break;
+		}
+	}
+
+	if (!all_is_default) {
 
 		f->store_line("[params]");
 		f->store_line("");
@@ -1686,6 +1698,24 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	f->close();
 	memdelete(f);
+
+	if (all_is_default && !load_default) {
+		// Move the import file to import folder
+		DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		Error err = da->rename(import_file, base_path + ".import");
+		if (err == OK) {
+			import_file = base_path + ".import";
+		}
+		memdelete(da);
+	} else if (load_default && !all_is_default) {
+		// Move the import file to the asset location
+		DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+		Error err = da->rename(import_file, p_file + ".import");
+		if (err == OK) {
+			import_file = p_file + ".import";
+		}
+		memdelete(da);
+	}
 
 	// Store the md5's of the various files. These are stored separately so that the .import files can be version controlled.
 	FileAccess *md5s = FileAccess::open(base_path + ".md5", FileAccess::WRITE);
