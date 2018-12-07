@@ -1553,6 +1553,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	Map<StringName, Variant> params;
 	String importer_name;
+	bool force_save = false;
 	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_file);
 
 	String import_file;
@@ -1582,6 +1583,9 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 			}
 			if (cf->has_section("remap")) {
 				importer_name = cf->get_value("remap", "importer");
+				if (cf->has_section_key("remap", "force_save")) {
+					force_save = cf->get_value("remap", "force_save");
+				}
 			}
 		}
 	} else {
@@ -1644,6 +1648,26 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	//as import is complete, save the .import file
 
+	// remove old .import file
+	DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
+	da->remove(import_file);
+
+	// Check if all settings are default
+	bool all_is_default = true;
+	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
+		String base = E->get().option.name;
+		if ((!has_custom_defaults && params[base] != E->get().default_value) || (has_custom_defaults && params[base] != custom_defaults[base])) {
+			all_is_default = false;
+			break;
+		}
+	}
+
+	if (all_is_default && !force_save) {
+		import_file = base_path + ".import";
+	} else {
+		import_file = p_file + ".import";
+	}
+
 	FileAccess *f = FileAccess::open(import_file, FileAccess::WRITE);
 	ERR_FAIL_COND(!f);
 
@@ -1653,6 +1677,9 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 	f->store_line("importer=\"" + importer->get_importer_name() + "\"");
 	if (importer->get_resource_type() != "") {
 		f->store_line("type=\"" + importer->get_resource_type() + "\"");
+	}
+	if (force_save) {
+		f->store_line("force_save=true");
 	}
 
 	Vector<String> dest_paths;
@@ -1712,17 +1739,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		f->store_line("dest_files=" + Variant(dp).get_construct_string() + "\n");
 	}
 
-	// Check if all settings are default
-	bool all_is_default = true;
-	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
-		String base = E->get().option.name;
-		if ((!has_custom_defaults && params[base] != E->get().default_value) || (has_custom_defaults && params[base] != custom_defaults[base])) {
-			all_is_default = false;
-			break;
-		}
-	}
-
-	if (!all_is_default) {
+	if (!all_is_default || force_save) {
 
 		f->store_line("[params]");
 		f->store_line("");
@@ -1732,7 +1749,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
 
 			String base = E->get().option.name;
-			if ((!has_custom_defaults && params[base] == E->get().default_value) || (has_custom_defaults && params[base] == custom_defaults[base])) {
+			if (!force_save && ((!has_custom_defaults && params[base] == E->get().default_value) || (has_custom_defaults && params[base] == custom_defaults[base]))) {
 				// Skip default values
 				continue;
 			}
@@ -1744,24 +1761,6 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	f->close();
 	memdelete(f);
-
-	if (all_is_default && !load_default) {
-		// Move the import file to import folder
-		DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		Error err = da->rename(import_file, base_path + ".import");
-		if (err == OK) {
-			import_file = base_path + ".import";
-		}
-		memdelete(da);
-	} else if (load_default && !all_is_default) {
-		// Move the import file to the asset location
-		DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		Error err = da->rename(import_file, p_file + ".import");
-		if (err == OK) {
-			import_file = p_file + ".import";
-		}
-		memdelete(da);
-	}
 
 	// Store the md5's of the various files. These are stored separately so that the .import files can be version controlled.
 	FileAccess *md5s = FileAccess::open(base_path + ".md5", FileAccess::WRITE);
