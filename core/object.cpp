@@ -1561,12 +1561,23 @@ void Object::_disconnect(const StringName &p_signal, Object *p_to_object, const 
 
 void Object::_set_bind(const String &p_set, const Variant &p_value) {
 
-	set(p_set, p_value);
+	bool valid = false;
+	set(p_set, p_value, &valid);
+	if (!valid) {
+		ERR_EXPLAIN("Cannot set property \"" + p_set + "\" in an instance of " + get_class_name());
+		ERR_FAIL();
+	}
 }
 
 Variant Object::_get_bind(const String &p_name) const {
 
-	return get(p_name);
+	bool valid = false;
+	Variant result = get(p_name, &valid);
+	if (!valid) {
+		ERR_EXPLAIN("Cannot get property \"" + p_name + "\" in an instance of " + get_class_name());
+		ERR_FAIL_V(Variant());
+	}
+	return result;
 }
 
 void Object::_set_indexed_bind(const NodePath &p_name, const Variant &p_value) {
