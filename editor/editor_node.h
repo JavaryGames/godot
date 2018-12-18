@@ -154,6 +154,7 @@ private:
 		RUN_STOP,
 		RUN_PLAY_SCENE,
 		RUN_PLAY_NATIVE,
+		RUN_PLAY_LAST_RUN_SCENE,
 		RUN_PLAY_CUSTOM_SCENE,
 		RUN_SCENE_SETTINGS,
 		RUN_SETTINGS,
@@ -253,6 +254,7 @@ private:
 	ToolButton *export_button;
 	ToolButton *prev_scene;
 	ToolButton *play_button;
+	ToolButton *play_last_run_scene_button;
 	ToolButton *pause_button;
 	ToolButton *stop_button;
 	ToolButton *run_settings_button;
@@ -356,6 +358,8 @@ private:
 
 	bool _playing_edited;
 	String run_custom_filename;
+	String last_run_scene;
+	bool _is_running_last_scene;
 	bool reference_resource_mem;
 	bool save_external_resources_mem;
 	uint64_t saved_version;
