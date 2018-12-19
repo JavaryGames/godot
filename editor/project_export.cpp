@@ -971,7 +971,7 @@ void ProjectExportDialog::_export_project_to_path(const String &p_path) {
 	current->set_export_path(p_path);
 
 	Error err = platform->export_project(current, export_debug->is_pressed(), p_path, 0);
-	if (err != OK) {
+	if (err != OK && err != ERR_SKIP) {
 		if (err == ERR_FILE_NOT_FOUND) {
 			error_dialog->set_text(vformat(TTR("Failed to export the project for platform '%s'.\nExport templates seem to be missing or invalid."), platform->get_name()));
 		} else { // Assume misconfiguration. FIXME: Improve error handling and preset config validation.

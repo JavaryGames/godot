@@ -616,7 +616,9 @@ class EditorExportPlatformAndroid : public EditorExportPlatform {
 		String dst_path = p_path.replace_first("res://", "assets/");
 
 		store_in_apk(ed, dst_path, p_data, _should_compress_asset(p_path, p_data) ? Z_DEFLATED : 0);
-		ed->ep->step("File: " + p_path, 3 + p_file * 100 / p_total);
+		if (ed->ep->step("File: " + p_path, 3 + p_file * 100 / p_total)) {
+			return ERR_SKIP;
+		}
 		return OK;
 	}
 
@@ -1253,7 +1255,9 @@ public:
 		}
 
 		//export_temp
-		ep.step("Exporting APK", 0);
+		if (ep.step("Exporting APK", 0)) {
+			return ERR_SKIP;
+		}
 
 		const bool use_remote = (p_debug_flags & DEBUG_FLAG_REMOTE_DEBUG) || (p_debug_flags & DEBUG_FLAG_DUMB_CLIENT);
 		const bool use_reverse = devices[p_device].api_level >= 21;
@@ -1276,7 +1280,9 @@ public:
 		String package_name = p_preset->get("package/unique_name");
 
 		if (remove_prev) {
-			ep.step("Uninstalling...", 1);
+			if (ep.step("Uninstalling...", 1)) {
+				return ERR_SKIP;
+			}
 
 			print_line("Uninstalling previous version: " + devices[p_device].name);
 
@@ -1289,7 +1295,9 @@ public:
 		}
 
 		print_line("Installing to device (please wait...): " + devices[p_device].name);
-		ep.step("Installing to device (please wait...)", 2);
+		if (ep.step("Installing to device (please wait...)", 2)) {
+			return ERR_SKIP;
+		}
 
 		args.clear();
 		args.push_back("-s");
@@ -1355,7 +1363,9 @@ public:
 			}
 		}
 
-		ep.step("Running on Device...", 3);
+		if (ep.step("Running on Device...", 3)) {
+			return ERR_SKIP;
+		}
 		args.clear();
 		args.push_back("-s");
 		args.push_back(devices[p_device].id);
@@ -1479,7 +1489,7 @@ public:
 
 		String src_apk;
 
-		EditorProgress ep("export", "Exporting for Android", 105);
+		EditorProgress ep("export", "Exporting for Android", 105, true);
 
 		if (p_debug)
 			src_apk = p_preset->get("custom_package/debug");
@@ -1506,7 +1516,9 @@ public:
 		FileAccess *src_f = NULL;
 		zlib_filefunc_def io = zipio_create_io_from_file(&src_f);
 
-		ep.step("Creating APK", 0);
+		if (ep.step("Creating APK", 0)) {
+			return ERR_SKIP;
+		}
 
 		unzFile pkg = unzOpen2(src_apk.utf8().get_data(), &io);
 		if (!pkg) {
@@ -1649,7 +1661,9 @@ public:
 			ret = unzGoToNextFile(pkg);
 		}
 
-		ep.step("Adding Files...", 1);
+		if (ep.step("Adding Files...", 1)) {
+			return ERR_SKIP;
+		}
 		Error err = OK;
 		Vector<String> cl = cmdline.strip_edges().split(" ");
 		for (int i = 0; i < cl.size(); i++) {
@@ -1787,14 +1801,18 @@ public:
 					user = EditorSettings::get_singleton()->get("export/android/debug_keystore_user");
 				}
 
-				ep.step("Signing debug APK...", 103);
+				if (ep.step("Signing debug APK...", 103)) {
+					return ERR_SKIP;
+				}
 
 			} else {
 				keystore = release_keystore;
 				password = release_password;
 				user = release_username;
 
-				ep.step("Signing release APK...", 103);
+				if (ep.step("Signing release APK...", 103)) {
+					return ERR_SKIP;
+				}
 			}
 
 			if (!FileAccess::exists(keystore)) {
@@ -1826,7 +1844,9 @@ public:
 				return ERR_CANT_CREATE;
 			}
 
-			ep.step("Verifying APK...", 104);
+			if (ep.step("Verifying APK...", 104)) {
+				return ERR_SKIP;
+			}
 
 			args.clear();
 			args.push_back("-verify");
@@ -1846,7 +1866,9 @@ public:
 
 		static const int ZIP_ALIGNMENT = 4;
 
-		ep.step("Aligning APK...", 105);
+		if (ep.step("Aligning APK...", 105)) {
+			return ERR_SKIP;
+		}
 
 		unzFile tmp_unaligned = unzOpen2(unaligned_path.utf8().get_data(), &io);
 		if (!tmp_unaligned) {
