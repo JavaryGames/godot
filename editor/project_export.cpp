@@ -971,7 +971,7 @@ void ProjectExportDialog::_export_project_to_path(const String &p_path) {
 	current->set_export_path(p_path);
 
 	Error err = platform->export_project(current, export_debug->is_pressed(), p_path, 0);
-	if (err != OK) {
+	if (err != OK && err != ERR_SKIP) {
 		error_dialog->set_text(TTR("Export templates for this platform are missing/corrupted:") + " " + platform->get_name());
 		error_dialog->show();
 		error_dialog->popup_centered_minsize(Size2(300, 80));
