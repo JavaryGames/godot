@@ -1408,7 +1408,7 @@ public:
 			return ERR_UNCONFIGURED;
 		}
 
-		// Export_temp APK.
+		//export_temp
 		if (ep.step("Exporting APK", 0)) {
 			device_lock->unlock();
 			return ERR_SKIP;
