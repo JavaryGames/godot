@@ -1686,7 +1686,16 @@ Variant Variant::get_named(const StringName &p_index, bool *r_valid) const {
 					return "Attempted use of stray pointer object.";
 				}
 			}
-
+#else
+			if (unlikely(!_get_obj().obj)) {
+				String msg = "Trying to get property \"" + String(p_index) + "\" from a null instance.";
+				throw msg;
+			} else {
+				if (unlikely(_get_obj().ref.is_null() && !ObjectDB::instance_validate(_get_obj().obj))) {
+					String msg = "Trying to get property \"" + String(p_index) + "\" from a stray pointer object.";
+					throw msg;
+				}
+			}
 #endif
 
 			return _get_obj().obj->get(p_index, r_valid);
