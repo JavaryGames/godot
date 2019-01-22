@@ -1510,17 +1510,33 @@ GDScriptFunction::~GDScriptFunction() {
 
 Variant GDScriptFunctionState::_signal_callback(const Variant **p_args, int p_argcount, Variant::CallError &r_error) {
 
-#ifdef DEBUG_ENABLED
 	if (state.instance_id && !ObjectDB::get_instance(state.instance_id)) {
-		ERR_EXPLAIN("Resumed after yield, but class instance is gone");
+		String msg = "Resumed after yield, but class instance is gone. Function '" + String(function->get_name()) + "'";
+		if (state.script_id && ObjectDB::get_instance(state.script_id)) {
+			GDScript *scr = static_cast<GDScript *>(ObjectDB::get_instance(state.script_id));
+			msg += ". In script '" + scr->get_path() + "'";
+		}
+#ifdef DEBUG_ENABLED
+		ERR_EXPLAIN(msg);
 		ERR_FAIL_V(Variant());
+#else
+		if (Engine::get_singleton()->has_singleton("CrashThrow")) {
+			Engine::get_singleton()->get_singleton_object("CrashThrow")->call("Throw", msg);
+		}
+#endif
 	}
 
 	if (state.script_id && !ObjectDB::get_instance(state.script_id)) {
-		ERR_EXPLAIN("Resumed after yield, but script is gone");
+		String msg = "Resumed after yield, but script is gone. Function '" + String(function->get_name()) + "'";
+#ifdef DEBUG_ENABLED
+		ERR_EXPLAIN(msg);
 		ERR_FAIL_V(Variant());
-	}
+#else
+		if (Engine::get_singleton()->has_singleton("CrashThrow")) {
+			Engine::get_singleton()->get_singleton_object("CrashThrow")->call("Throw", msg);
+		}
 #endif
+	}
 
 	Variant arg;
 	r_error.error = Variant::CallError::CALL_OK;
