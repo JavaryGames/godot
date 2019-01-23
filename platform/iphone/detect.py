@@ -28,7 +28,7 @@ def get_opts():
         BoolVariable('game_center', 'Support for game center', True),
         BoolVariable('store_kit', 'Support for in-app store', True),
         BoolVariable('icloud', 'Support for iCloud', True),
-        BoolVariable('ios_exceptions', 'Enable exceptions', False),
+        BoolVariable('ios_exceptions', 'Enable exceptions', True),
         ('ios_triple', 'Triple for ios toolchain', ''),
         BoolVariable('ios_sim', 'Build simulator binary', False),
     ]
