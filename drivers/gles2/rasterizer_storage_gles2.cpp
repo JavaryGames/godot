@@ -68,7 +68,6 @@ void RasterizerStorageGLES2::bind_quad_array() const {
 	glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
 }
 
-Ref<Image> RasterizerStorageGLES2::_get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, Image::Format &r_real_format, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type, bool &r_compressed) const {
 void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> capture_img){
 	/* Custom screen capture code */
 	RID texture_rid = this->render_target_get_texture(render_target);
@@ -77,7 +76,6 @@ void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> captur
 	// 1 == GLES2
 	int width = texture->width;
 	int height = texture->height;
-	int size = width * height * 4;
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	capture_img->lock();
 	glReadPixels(0,0,width, height, GL_RGBA, GL_UNSIGNED_BYTE, capture_img->write_lock.ptr());
@@ -99,7 +97,7 @@ void RasterizerStorageGLES2::capture_screen(RID render_target, Ref<Image> captur
 	capture_img->unlock();
 }
 
-Ref<Image> RasterizerStorageGLES2::_get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type) {
+Ref<Image> RasterizerStorageGLES2::_get_gl_image_and_format(const Ref<Image> &p_image, Image::Format p_format, uint32_t p_flags, Image::Format &r_real_format, GLenum &r_gl_format, GLenum &r_gl_internal_format, GLenum &r_gl_type, bool &r_compressed) const {
 
 	r_gl_format = 0;
 	Ref<Image> image = p_image;
