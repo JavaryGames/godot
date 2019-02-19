@@ -30,6 +30,7 @@
 
 #include "resource_importer.h"
 
+#include "core/io/config_file.h"
 #include "core/os/os.h"
 #include "core/variant_parser.h"
 
@@ -197,6 +198,25 @@ bool ResourceFormatImporter::recognize_path(const String &p_path, const String &
 		return true;
 	}
 	return FileAccess::exists(get_import_base_path(p_path) + ".import");
+}
+
+bool ResourceFormatImporter::exists(const String &p_path) const {
+	String path;
+	if (FileAccess::exists(p_path + ".import")) {
+		path = p_path + ".import";
+	} else if (FileAccess::exists(get_import_base_path(p_path) + ".import")) {
+		path = get_import_base_path(p_path) + ".import";
+	} else {
+		return false;
+	}
+
+	ConfigFile import;
+	if (import.load(path) != OK) {
+		return false;
+	}
+
+	String remap = import.get_value("remap", "path", "");
+	return FileAccess::exists(remap);
 }
 
 bool ResourceFormatImporter::can_be_imported(const String &p_path) const {
