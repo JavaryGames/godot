@@ -342,7 +342,9 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, bool p_only_impo
 	if (!reimport_on_missing_imported_files && p_only_imported_files)
 		return false;
 
-	if (!FileAccess::exists(p_path + ".import")) {
+	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_path);
+
+	if (!FileAccess::exists(p_path + ".import") && !FileAccess::exists(base_path + ".import")) {
 		return true;
 	}
 
@@ -417,7 +419,6 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, bool p_only_impo
 	memdelete(f);
 
 	// Read the md5's from a separate file (so the import parameters aren't dependent on the file version
-	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_path);
 	FileAccess *md5s = FileAccess::open(base_path + ".md5", FileAccess::READ, &err);
 	if (!md5s) { // No md5's stored for this resource
 		return true;
