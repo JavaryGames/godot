@@ -189,7 +189,7 @@ void ResourceFormatImporter::get_recognized_extensions_for_type(const String &p_
 
 bool ResourceFormatImporter::exists(const String &p_path) const {
 
-	return FileAccess::exists(p_path + ".import");
+	return FileAccess::exists(p_path + ".import") || FileAccess::exists(get_import_base_path(p_path) + ".import");
 }
 
 bool ResourceFormatImporter::recognize_path(const String &p_path, const String &p_for_type) const {
@@ -198,25 +198,6 @@ bool ResourceFormatImporter::recognize_path(const String &p_path, const String &
 		return true;
 	}
 	return FileAccess::exists(get_import_base_path(p_path) + ".import");
-}
-
-bool ResourceFormatImporter::exists(const String &p_path) const {
-	String path;
-	if (FileAccess::exists(p_path + ".import")) {
-		path = p_path + ".import";
-	} else if (FileAccess::exists(get_import_base_path(p_path) + ".import")) {
-		path = get_import_base_path(p_path) + ".import";
-	} else {
-		return false;
-	}
-
-	ConfigFile import;
-	if (import.load(path) != OK) {
-		return false;
-	}
-
-	String remap = import.get_value("remap", "path", "");
-	return FileAccess::exists(remap);
 }
 
 bool ResourceFormatImporter::can_be_imported(const String &p_path) const {
