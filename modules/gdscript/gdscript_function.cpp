@@ -426,6 +426,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 	}
 	bool exit_ok = false;
 #endif
+#define CATCH_CRASH_THROW catch (String exception) { \
+	String message = exception + "\nOn " + String(name) + " - " + _script->path + ":" + itos(line); \
+		if (Engine::get_singleton()->has_singleton("CrashThrow")) { \
+			Object *crash = Engine::get_singleton()->get_singleton_object("CrashThrow"); \
+			crash->call("Throw", message); \
+			GD_ERR_BREAK(1); \
+		} else { \
+			throw message.utf8().get_data(); \
+		} \
+	}
 
 #ifdef DEBUG_ENABLED
 	OPCODE_WHILE(ip < _code_size) {
@@ -560,7 +570,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				GET_VARIANT_PTR(value, 3);
 
 				bool valid;
-				dst->set(*index, *value, &valid);
+				try {
+					dst->set(*index, *value, &valid);
+				} CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -591,7 +603,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				//allow better error message in cases where src and dst are the same stack position
 				Variant ret = src->get(*index, &valid);
 #else
-				*dst = src->get(*index, &valid);
+				try {
+					*dst = src->get(*index, &valid);
+				} CATCH_CRASH_THROW
 
 #endif
 #ifdef DEBUG_ENABLED
@@ -624,7 +638,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				const StringName *index = &_global_names_ptr[indexname];
 
 				bool valid;
-				dst->set_named(*index, *value, &valid);
+				try {
+					dst->set_named(*index, *value, &valid);
+				} CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -655,7 +671,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				Variant ret = src->get_named(*index, &valid);
 
 #else
-				*dst = src->get_named(*index, &valid);
+				try {
+					*dst = src->get_named(*index, &valid);
+				} CATCH_CRASH_THROW
 #endif
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -682,7 +700,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 				bool valid;
 #ifndef DEBUG_ENABLED
-				ClassDB::set_property(p_instance->owner, *index, *src, &valid);
+				try {
+					ClassDB::set_property(p_instance->owner, *index, *src, &valid);
+				} CATCH_CRASH_THROW
 #else
 				bool ok = ClassDB::set_property(p_instance->owner, *index, *src, &valid);
 				if (!ok) {
@@ -706,7 +726,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				GET_VARIANT_PTR(dst, 2);
 
 #ifndef DEBUG_ENABLED
-				ClassDB::get_property(p_instance->owner, *index, *dst);
+				try {
+					ClassDB::get_property(p_instance->owner, *index, *dst);
+				} CATCH_CRASH_THROW
 #else
 				bool ok = ClassDB::get_property(p_instance->owner, *index, *dst);
 				if (!ok) {
@@ -1075,16 +1097,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 						base->call_ptr(*methodname, (const Variant **)argptrs, argc, NULL, err);
 					}
-				} catch (String exception) {
-					String message = exception + "\nOn " + String(name) + " - " + _script->path + ":" + itos(line);
-					if (Engine::get_singleton()->has_singleton("CrashThrow")) {
-						Object *crash = Engine::get_singleton()->get_singleton_object("CrashThrow");
-						crash->call("Throw", message);
-						GD_ERR_BREAK(1);
-					} else {
-						throw message.utf8().get_data();
-					}
-				}
+				} CATCH_CRASH_THROW;
 #ifdef DEBUG_ENABLED
 				if (GDScriptLanguage::get_singleton()->profiling) {
 					function_call_time += OS::get_singleton()->get_ticks_usec() - call_time;
@@ -1147,7 +1160,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 				Variant::CallError err;
 
-				GDScriptFunctions::call(func, (const Variant **)argptrs, argc, *dst, err);
+				try {
+					GDScriptFunctions::call(func, (const Variant **)argptrs, argc, *dst, err);
+				} CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (err.error != Variant::CallError::CALL_OK) {
@@ -1210,38 +1225,41 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 				Variant::CallError err;
 
-				if (E) {
+				try {
 
-					*dst = E->get()->call(p_instance, (const Variant **)argptrs, argc, err);
-				} else if (gds->native.ptr()) {
+					if (E) {
 
-					if (*methodname != GDScriptLanguage::get_singleton()->strings._init) {
+						*dst = E->get()->call(p_instance, (const Variant **)argptrs, argc, err);
+					} else if (gds->native.ptr()) {
 
-						MethodBind *mb = ClassDB::get_method(gds->native->get_name(), *methodname);
-						if (!mb) {
-							err.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+						if (*methodname != GDScriptLanguage::get_singleton()->strings._init) {
+
+							MethodBind *mb = ClassDB::get_method(gds->native->get_name(), *methodname);
+							if (!mb) {
+								err.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+							} else {
+								*dst = mb->call(p_instance->owner, (const Variant **)argptrs, argc, err);
+							}
 						} else {
-							*dst = mb->call(p_instance->owner, (const Variant **)argptrs, argc, err);
+							err.error = Variant::CallError::CALL_OK;
 						}
 					} else {
-						err.error = Variant::CallError::CALL_OK;
+
+						if (*methodname != GDScriptLanguage::get_singleton()->strings._init) {
+							err.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
+						} else {
+							err.error = Variant::CallError::CALL_OK;
+						}
 					}
-				} else {
 
-					if (*methodname != GDScriptLanguage::get_singleton()->strings._init) {
-						err.error = Variant::CallError::CALL_ERROR_INVALID_METHOD;
-					} else {
-						err.error = Variant::CallError::CALL_OK;
+					if (err.error != Variant::CallError::CALL_OK) {
+
+						String methodstr = *methodname;
+						err_text = _get_call_error(err, "function '" + methodstr + "'", (const Variant **)argptrs);
+
+						OPCODE_BREAK;
 					}
-				}
-
-				if (err.error != Variant::CallError::CALL_OK) {
-
-					String methodstr = *methodname;
-					err_text = _get_call_error(err, "function '" + methodstr + "'", (const Variant **)argptrs);
-
-					OPCODE_BREAK;
-				}
+				} CATCH_CRASH_THROW
 
 				ip += 4 + argc;
 			}
