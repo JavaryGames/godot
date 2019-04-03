@@ -407,6 +407,7 @@ public class PaymentsManager {
 					} catch (RemoteException e) {
 						e.printStackTrace();
 						godotPaymentV3.errorSkuDetail("RemoteException error!");
+						return;
 					}
 				}
 				godotPaymentV3.completeSkuDetail();
