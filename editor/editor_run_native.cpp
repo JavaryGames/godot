@@ -135,6 +135,10 @@ void EditorRunNative::_run_native(int p_idx, int p_platform) {
 		flags |= EditorExportPlatform::DEBUG_FLAG_VIEW_COLLISONS;
 	if (debug_navigation)
 		flags |= EditorExportPlatform::DEBUG_FLAG_VIEW_NAVIGATION;
+	if (debug_control_areas)
+		flags |= EditorExportPlatform::DEBUG_FLAG_VIEW_CONTROL_AREAS;
+	if (debug_control_names)
+		flags |= EditorExportPlatform::DEBUG_FLAG_VIEW_CONTROL_NAMES;
 
 	eep->run(preset, p_idx, flags);
 }
@@ -186,6 +190,22 @@ bool EditorRunNative::get_debug_navigation() const {
 	return debug_navigation;
 }
 
+void EditorRunNative::set_debug_control_areas(bool p_debug) {
+	debug_control_areas = p_debug;
+}
+
+bool EditorRunNative::get_debug_control_areas() const {
+	return debug_control_areas;
+}
+
+void EditorRunNative::set_debug_control_names(bool p_debug) {
+	debug_control_names = p_debug;
+}
+
+bool EditorRunNative::get_debug_control_names() const {
+	return debug_control_names;
+}
+
 EditorRunNative::EditorRunNative() {
 	set_process(true);
 	first = true;
@@ -193,4 +213,6 @@ EditorRunNative::EditorRunNative() {
 	deploy_debug_remote = false;
 	debug_collisions = false;
 	debug_navigation = false;
+	debug_control_areas = false;
+	debug_control_names = false;
 }

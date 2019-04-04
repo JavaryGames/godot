@@ -66,6 +66,14 @@ Error EditorRun::run(const String &p_scene, const String p_custom_args, const Li
 		args.push_back("--debug-navigation");
 	}
 
+	if (debug_control_areas) {
+		args.push_back("--debug-control-areas");
+	}
+
+	if (debug_control_names) {
+		args.push_back("--debug-control-names");
+	}
+
 	int screen = EditorSettings::get_singleton()->get("run/window_placement/screen");
 	if (screen == 0) {
 		// Same as editor
@@ -223,9 +231,27 @@ bool EditorRun::get_debug_navigation() const {
 	return debug_navigation;
 }
 
+void EditorRun::set_debug_control_areas(bool p_debug) {
+	debug_control_areas = p_debug;
+}
+
+bool EditorRun::get_debug_control_areas() const {
+	return debug_control_areas;
+}
+
+void EditorRun::set_debug_control_names(bool p_debug) {
+	debug_control_names = p_debug;
+}
+
+bool EditorRun::get_debug_control_names() const {
+	return debug_control_names;
+}
+
 EditorRun::EditorRun() {
 
 	status = STATUS_STOP;
 	debug_collisions = false;
 	debug_navigation = false;
+	debug_control_areas = false;
+	debug_control_names = false;
 }

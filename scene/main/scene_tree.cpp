@@ -728,6 +728,22 @@ bool SceneTree::is_debugging_navigation_hint() const {
 
 	return debug_navigation_hint;
 }
+
+void SceneTree::set_debug_control_area_hint(bool p_enabled) {
+	debug_control_area_hint = p_enabled;
+}
+
+bool SceneTree::is_debugging_control_area_hint() const {
+	return debug_control_area_hint;
+}
+
+void SceneTree::set_debug_control_name_hint(bool p_enabled) {
+	debug_control_name_hint = p_enabled;
+}
+
+bool SceneTree::is_debugging_control_name_hint() const {
+	return debug_control_name_hint;
+}
 #endif
 
 void SceneTree::set_debug_collisions_color(const Color &p_color) {
@@ -763,6 +779,30 @@ Color SceneTree::get_debug_navigation_color() const {
 void SceneTree::set_debug_navigation_disabled_color(const Color &p_color) {
 
 	debug_navigation_disabled_color = p_color;
+}
+
+void SceneTree::set_debug_control_stop_color(const Color &p_color) {
+	debug_control_stop_color = p_color;
+}
+
+Color SceneTree::get_debug_control_stop_color() const {
+	return debug_control_stop_color;
+}
+
+void SceneTree::set_debug_control_ignore_color(const Color &p_color) {
+	debug_control_ignore_color = p_color;
+}
+
+Color SceneTree::get_debug_control_ignore_color() const {
+	return debug_control_ignore_color;
+}
+
+void SceneTree::set_debug_control_pass_color(const Color &p_color) {
+	debug_control_pass_color = p_color;
+}
+
+Color SceneTree::get_debug_control_pass_color() const {
+	return debug_control_pass_color;
 }
 
 Color SceneTree::get_debug_navigation_disabled_color() const {
@@ -1964,6 +2004,8 @@ SceneTree::SceneTree() {
 #ifdef DEBUG_ENABLED
 	debug_collisions_hint = false;
 	debug_navigation_hint = false;
+	debug_control_area_hint = false;
+	debug_control_name_hint = false;
 #endif
 	debug_collisions_color = GLOBAL_DEF("debug/shapes/collision/shape_color", Color(0.0, 0.6, 0.7, 0.5));
 	debug_collision_contact_color = GLOBAL_DEF("debug/shapes/collision/contact_color", Color(1.0, 0.2, 0.1, 0.8));
@@ -1971,6 +2013,9 @@ SceneTree::SceneTree() {
 	debug_navigation_disabled_color = GLOBAL_DEF("debug/shapes/navigation/disabled_geometry_color", Color(1.0, 0.7, 0.1, 0.4));
 	collision_debug_contacts = GLOBAL_DEF("debug/shapes/collision/max_contacts_displayed", 10000);
 	ProjectSettings::get_singleton()->set_custom_property_info("debug/shapes/collision/max_contacts_displayed", PropertyInfo(Variant::INT, "debug/shapes/collision/max_contacts_displayed", PROPERTY_HINT_RANGE, "0,20000,1")); // No negative
+	debug_control_stop_color = GLOBAL_DEF("debug/shapes/control/stop_color", Color(1.0, 0.0, 0.0, 0.2));
+	debug_control_ignore_color = GLOBAL_DEF("debug/shapes/control/ignore_color", Color(0.0, 0.0, 1.0, 0.2));
+	debug_control_pass_color = GLOBAL_DEF("debug/shapes/control/pass_color", Color(0.0, 1.0, 0.0, 0.2));
 
 	tree_version = 1;
 	physics_process_time = 1;

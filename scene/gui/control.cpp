@@ -185,6 +185,53 @@ Size2 Control::_edit_get_minimum_size() const {
 	return get_combined_minimum_size();
 }
 
+#ifdef DEBUG_ENABLED
+
+void Control::_draw_debug_area() {
+	ERR_FAIL_COND(!is_inside_tree());
+
+	Color area_color;
+	switch (get_mouse_filter()) {
+		case MOUSE_FILTER_STOP: {
+			area_color = get_tree()->get_debug_control_stop_color();
+			break;
+		}
+		case MOUSE_FILTER_PASS: {
+			area_color = get_tree()->get_debug_control_pass_color();
+			break;
+		}
+		case MOUSE_FILTER_IGNORE: {
+			area_color = get_tree()->get_debug_control_ignore_color();
+			break;
+		}
+		default: {
+			ERR_EXPLAIN("Invalid mouse filter");
+			ERR_FAIL();
+		}
+	}
+
+	VisualServer::get_singleton()->canvas_item_add_rect(debug_canvas_item, get_global_rect(), area_color);
+}
+
+void Control::_draw_debug_name() {
+	Ref<Font> label_font = Theme::get_default()->get_font("font", "Label");
+	Vector2 string_pos = label_font->get_char_size('x');
+	string_pos.x = 0;
+	string_pos += get_global_position();
+
+	// string_pos += get_global_position();
+
+	// Cheap outline
+	Color outline_color = Color(0, 0, 0, 1);
+	label_font->draw(debug_canvas_item, string_pos + Point2(1, 1), get_name(), outline_color);
+	label_font->draw(debug_canvas_item, string_pos + Point2(1, -1), get_name(), outline_color);
+	label_font->draw(debug_canvas_item, string_pos + Point2(-1, 1), get_name(), outline_color);
+	label_font->draw(debug_canvas_item, string_pos + Point2(-1, -1), get_name(), outline_color);
+	label_font->draw(debug_canvas_item, string_pos, get_name(), Color(1, 1, 1, 1));
+}
+
+#endif
+
 Transform2D Control::_get_internal_transform() const {
 
 	Transform2D rot_scale;
@@ -461,6 +508,10 @@ void Control::_notification(int p_notification) {
 	switch (p_notification) {
 
 		case NOTIFICATION_ENTER_TREE: {
+#ifdef DEBUG_ENABLED
+			VisualServer::get_singleton()->canvas_item_set_parent(debug_canvas_item, get_canvas());
+			VisualServer::get_singleton()->canvas_item_set_z_index(debug_canvas_item, VisualServer::CANVAS_ITEM_Z_MAX - 1);
+#endif
 
 		} break;
 		case NOTIFICATION_POST_ENTER_TREE: {
@@ -610,6 +661,18 @@ void Control::_notification(int p_notification) {
 			VisualServer::get_singleton()->canvas_item_set_clip(get_canvas_item(), data.clip_contents);
 			//emit_signal(SceneStringNames::get_singleton()->draw);
 
+#ifdef DEBUG_ENABLED
+			if (!Engine::get_singleton()->is_editor_hint()) {
+				VisualServer::get_singleton()->canvas_item_clear(debug_canvas_item);
+				if (get_tree()->is_debugging_control_area_hint()) {
+					_draw_debug_area();
+				}
+				if (get_tree()->is_debugging_control_name_hint()) {
+					_draw_debug_name();
+				}
+			}
+#endif
+
 		} break;
 		case NOTIFICATION_MOUSE_ENTER: {
 
@@ -640,7 +703,8 @@ void Control::_notification(int p_notification) {
 		} break;
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 
-			if (!is_visible_in_tree()) {
+			bool is_visible = is_visible_in_tree();
+			if (!is_visible) {
 
 				if (get_viewport() != NULL)
 					get_viewport()->_gui_hid_control(this);
@@ -656,12 +720,24 @@ void Control::_notification(int p_notification) {
 				_size_changed();
 			}
 
+#ifdef DEBUG_ENABLED
+			if (!Engine::get_singleton()->is_editor_hint()) {
+				// VisualServer::get_singleton()->canvas_item_set_custom_rect(debug_canvas_item, true, Rect2(Point2(), get_size()));
+				VisualServer::get_singleton()->canvas_item_set_visible(debug_canvas_item, is_visible);
+			}
+#endif
+
 		} break;
 		case SceneTree::NOTIFICATION_WM_UNFOCUS_REQUEST: {
 
 			get_viewport()->_gui_unfocus_control(this);
 
 		} break;
+#ifdef DEBUG_ENABLED
+		case NOTIFICATION_TRANSFORM_CHANGED: {
+			update();
+		} break;
+#endif
 	}
 }
 
@@ -2993,7 +3069,20 @@ Control::Control() {
 	}
 	data.focus_mode = FOCUS_NONE;
 	data.modal_prev_focus_owner = 0;
+
+#ifdef DEBUG_ENABLED
+	debug_canvas_item = VisualServer::get_singleton()->canvas_item_create();
+	VisualServer::get_singleton()->canvas_item_set_clip(debug_canvas_item, true);
+	VisualServer::get_singleton()->canvas_item_set_update_when_visible(debug_canvas_item, true);
+
+	if (!Engine::get_singleton()->is_editor_hint() && (SceneTree::get_singleton()->is_debugging_control_area_hint() || SceneTree::get_singleton()->is_debugging_control_name_hint())) {
+		set_notify_transform(true);
+	}
+#endif
 }
 
 Control::~Control() {
+#ifdef DEBUG_ENABLED
+	VisualServer::get_singleton()->free(debug_canvas_item);
+#endif
 }

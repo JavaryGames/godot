@@ -139,6 +139,8 @@ static bool use_debug_profiler = false;
 #ifdef DEBUG_ENABLED
 static bool debug_collisions = false;
 static bool debug_navigation = false;
+static bool debug_control_areas = false;
+static bool debug_control_names = false;
 #endif
 static int frame_delay = 0;
 static bool disable_render_loop = false;
@@ -266,6 +268,8 @@ void Main::print_help(const char *p_binary) {
 #ifdef DEBUG_ENABLED
 	OS::get_singleton()->print("  --debug-collisions               Show collisions shapes when running the scene.\n");
 	OS::get_singleton()->print("  --debug-navigation               Show navigation polygons when running the scene.\n");
+	OS::get_singleton()->print("  --debug-control-areas            Show areas of controls as rectangles. Colors are based on mouse filter.\n");
+	OS::get_singleton()->print("  --debug-control-names            Show the names of controls in their top-left corner.\n");
 #endif
 	OS::get_singleton()->print("  --frame-delay <ms>               Simulate high CPU load (delay each frame by <ms> milliseconds).\n");
 	OS::get_singleton()->print("  --time-scale <scale>             Force time scale (higher values are faster, 1.0 is normal speed).\n");
@@ -679,6 +683,10 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 			debug_collisions = true;
 		} else if (I->get() == "--debug-navigation") {
 			debug_navigation = true;
+		} else if (I->get() == "--debug-control-areas") {
+			debug_control_areas = true;
+		} else if (I->get() == "--debug-control-names") {
+			debug_control_names = true;
 #endif
 		} else if (I->get() == "--remote-debug") {
 			if (I->next()) {
@@ -1497,6 +1505,13 @@ bool Main::start() {
 		if (debug_navigation) {
 			sml->set_debug_navigation_hint(true);
 		}
+		if (debug_control_areas) {
+			sml->set_debug_control_area_hint(true);
+		}
+		if (debug_control_names) {
+			sml->set_debug_control_name_hint(true);
+		}
+
 #endif
 
 		ResourceLoader::add_custom_loaders();

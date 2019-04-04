@@ -113,6 +113,8 @@ private:
 #ifdef DEBUG_ENABLED
 	bool debug_collisions_hint;
 	bool debug_navigation_hint;
+	bool debug_control_area_hint;
+	bool debug_control_name_hint;
 #endif
 	bool pause;
 	int root_lock;
@@ -177,6 +179,9 @@ private:
 	Ref<Material> navigation_disabled_material;
 	Ref<Material> collision_material;
 	int collision_debug_contacts;
+	Color debug_control_stop_color;
+	Color debug_control_ignore_color;
+	Color debug_control_pass_color;
 
 	void _change_scene(Node *p_to);
 	//void _call_group(uint32_t p_call_flags,const StringName& p_group,const StringName& p_function,const Variant& p_arg1,const Variant& p_arg2);
@@ -347,12 +352,24 @@ public:
 
 	void set_debug_navigation_hint(bool p_enabled);
 	bool is_debugging_navigation_hint() const;
+
+	void set_debug_control_area_hint(bool p_enabled);
+	bool is_debugging_control_area_hint() const;
+
+	void set_debug_control_name_hint(bool p_enabled);
+	bool is_debugging_control_name_hint() const;
 #else
 	void set_debug_collisions_hint(bool p_enabled) {}
 	bool is_debugging_collisions_hint() const { return false; }
 
 	void set_debug_navigation_hint(bool p_enabled) {}
 	bool is_debugging_navigation_hint() const { return false; }
+
+	void set_debug_control_area_hint(bool p_enabled) {}
+	bool is_debugging_control_area_hint() const { return false; }
+
+	void set_debug_control_name_hint(bool p_enabled) {}
+	bool is_debugging_control_name_hint() const { return false; }
 #endif
 
 	void set_debug_collisions_color(const Color &p_color);
@@ -366,6 +383,15 @@ public:
 
 	void set_debug_navigation_disabled_color(const Color &p_color);
 	Color get_debug_navigation_disabled_color() const;
+
+	void set_debug_control_stop_color(const Color &p_color);
+	Color get_debug_control_stop_color() const;
+
+	void set_debug_control_ignore_color(const Color &p_color);
+	Color get_debug_control_ignore_color() const;
+
+	void set_debug_control_pass_color(const Color &p_color);
+	Color get_debug_control_pass_color() const;
 
 	Ref<Material> get_debug_navigation_material();
 	Ref<Material> get_debug_navigation_disabled_material();

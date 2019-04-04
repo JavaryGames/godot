@@ -2323,6 +2323,24 @@ void EditorNode::_menu_option_confirm(int p_option, bool p_confirmed) {
 			EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_navigation", !ischecked);
 
 		} break;
+		case RUN_DEBUG_CONTROL_AREAS: {
+
+			bool ischecked = debug_menu->get_popup()->is_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_CONTROL_AREAS));
+			debug_menu->get_popup()->set_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_CONTROL_AREAS), !ischecked);
+			run_native->set_debug_control_areas(!ischecked);
+			editor_run.set_debug_control_areas(!ischecked);
+			EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_control_areas", !ischecked);
+
+		} break;
+		case RUN_DEBUG_CONTROL_NAMES: {
+
+			bool ischecked = debug_menu->get_popup()->is_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_CONTROL_NAMES));
+			debug_menu->get_popup()->set_item_checked(debug_menu->get_popup()->get_item_index(RUN_DEBUG_CONTROL_NAMES), !ischecked);
+			run_native->set_debug_control_names(!ischecked);
+			editor_run.set_debug_control_names(!ischecked);
+			EditorSettings::get_singleton()->set_project_metadata("debug_options", "run_debug_control_names", !ischecked);
+
+		} break;
 		case RUN_RELOAD_SCRIPTS: {
 
 			bool ischecked = debug_menu->get_popup()->is_item_checked(debug_menu->get_popup()->get_item_index(RUN_RELOAD_SCRIPTS));
@@ -2532,6 +2550,8 @@ void EditorNode::_update_debug_options() {
 	bool check_file_server = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_file_server", false);
 	bool check_debug_collisons = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_collisons", false);
 	bool check_debug_navigation = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_navigation", false);
+	bool check_debug_control_areas = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_control_areas", false);
+	bool check_debug_control_names = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_debug_control_names", false);
 	bool check_live_debug = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_live_debug", false);
 	bool check_reload_scripts = EditorSettings::get_singleton()->get_project_metadata("debug_options", "run_reload_scripts", false);
 
@@ -2539,6 +2559,8 @@ void EditorNode::_update_debug_options() {
 	if (check_file_server) _menu_option_confirm(RUN_FILE_SERVER, true);
 	if (check_debug_collisons) _menu_option_confirm(RUN_DEBUG_COLLISONS, true);
 	if (check_debug_navigation) _menu_option_confirm(RUN_DEBUG_NAVIGATION, true);
+	if (check_debug_control_areas) _menu_option_confirm(RUN_DEBUG_CONTROL_AREAS, true);
+	if (check_debug_control_names) _menu_option_confirm(RUN_DEBUG_CONTROL_NAMES, true);
 	if (check_live_debug) _menu_option_confirm(RUN_LIVE_DEBUG, true);
 	if (check_reload_scripts) _menu_option_confirm(RUN_RELOAD_SCRIPTS, true);
 }
@@ -5496,6 +5518,10 @@ EditorNode::EditorNode() {
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("Collision shapes and raycast nodes (for 2D and 3D) will be visible on the running game if this option is turned on."));
 	p->add_check_item(TTR("Visible Navigation"), RUN_DEBUG_NAVIGATION);
 	p->set_item_tooltip(p->get_item_count() - 1, TTR("Navigation meshes and polygons will be visible on the running game if this option is turned on."));
+	p->add_check_item(TTR("Visible Control Shapes"), RUN_DEBUG_CONTROL_AREAS);
+	p->set_item_tooltip(p->get_item_count() - 1, TTR("Controls will draw a semi-transparent rectangle over their area when game is running. Their color depends on the mouse filter."));
+	p->add_check_item(TTR("Visible Control Names"), RUN_DEBUG_CONTROL_NAMES);
+	p->set_item_tooltip(p->get_item_count() - 1, TTR("Controls will show their name in the top left corner of their area."));
 	p->add_separator();
 	//those are now on by default, since they are harmless
 	p->add_check_item(TTR("Sync Scene Changes"), RUN_LIVE_DEBUG);

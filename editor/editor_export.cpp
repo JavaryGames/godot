@@ -305,6 +305,14 @@ void EditorExportPlatform::gen_debug_flags(Vector<String> &r_flags, int p_flags)
 
 		r_flags.push_back("--debug-navigation");
 	}
+
+	if (p_flags & DEBUG_FLAG_VIEW_CONTROL_AREAS) {
+		r_flags.push_back("--debug-control-areas");
+	}
+
+	if (p_flags & DEBUG_FLAG_VIEW_CONTROL_NAMES) {
+		r_flags.push_back("--debug-control-names");
+	}
 }
 
 Error EditorExportPlatform::_save_pack_file(void *p_userdata, const String &p_path, const Vector<uint8_t> &p_data, int p_file, int p_total) {
@@ -1081,6 +1089,14 @@ void EditorExportPlatform::gen_export_flags(Vector<String> &r_flags, int p_flags
 	if (p_flags & DEBUG_FLAG_VIEW_NAVIGATION) {
 
 		r_flags.push_back("--debug-navigation");
+	}
+
+	if (p_flags & DEBUG_FLAG_VIEW_CONTROL_AREAS) {
+		r_flags.push_back("--debug-control-areas");
+	}
+
+	if (p_flags & DEBUG_FLAG_VIEW_CONTROL_NAMES) {
+		r_flags.push_back("--debug-control-names");
 	}
 }
 EditorExportPlatform::EditorExportPlatform() {
