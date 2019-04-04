@@ -44,6 +44,8 @@ class EditorRunNative : public HBoxContainer {
 	bool deploy_debug_remote;
 	bool debug_collisions;
 	bool debug_navigation;
+	bool debug_control_areas;
+	bool debug_control_names;
 
 	int resume_idx;
 	int resume_platform;
@@ -68,6 +70,12 @@ public:
 	bool get_debug_navigation() const;
 
 	void resume_run_native();
+
+	void set_debug_control_areas(bool p_debug);
+	bool get_debug_control_areas() const;
+
+	void set_debug_control_names(bool p_debug);
+	bool get_debug_control_names() const;
 
 	EditorRunNative();
 };

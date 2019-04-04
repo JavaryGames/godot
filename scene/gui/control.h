@@ -245,6 +245,12 @@ private:
 
 	void _update_minimum_size_cache();
 
+#ifdef DEBUG_ENABLED
+	RID debug_canvas_item;
+	void _draw_debug_area();
+	void _draw_debug_name();
+#endif
+
 protected:
 	virtual void add_child_notify(Node *p_child);
 	virtual void remove_child_notify(Node *p_child);
