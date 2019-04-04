@@ -760,7 +760,9 @@ void unregister_scene_types() {
 	ResourceLoader::remove_resource_format_loader(resource_loader_bmfont);
 	resource_loader_bmfont.unref();
 
+#ifndef _3D_DISABLED
 	SpatialMaterial::finish_shaders();
+#endif
 	ParticlesMaterial::finish_shaders();
 	CanvasItemMaterial::finish_shaders();
 	SceneStringNames::free();
