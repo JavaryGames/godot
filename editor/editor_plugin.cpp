@@ -394,6 +394,9 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 			EditorNode::get_singleton()->get_inspector_dock_addon_area()->add_child(p_control);
 
 		} break;
+		case CONTAINTER_SCRIPT_EDITOR_TOOLBAR: {
+			ScriptEditor::get_singleton()->get_menu_hb()->add_child(p_control);
+		}
 	}
 }
 
@@ -444,6 +447,9 @@ void EditorPlugin::remove_control_from_container(CustomControlContainer p_locati
 			EditorNode::get_singleton()->get_inspector_dock_addon_area()->remove_child(p_control);
 
 		} break;
+		case CONTAINTER_SCRIPT_EDITOR_TOOLBAR: {
+			ScriptEditor::get_singleton()->get_menu_hb()->remove_child(p_control);
+		}
 	}
 }
 
@@ -820,6 +826,8 @@ void EditorPlugin::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_editor_interface"), &EditorPlugin::get_editor_interface);
 	ClassDB::bind_method(D_METHOD("get_script_create_dialog"), &EditorPlugin::get_script_create_dialog);
 
+	ClassDB::bind_method(D_METHOD("open_script_in_external_editor"), &EditorPlugin::open_current_script_in_external_editor);
+
 	ClassDB::add_virtual_method(get_class_static(), MethodInfo(Variant::BOOL, "forward_canvas_gui_input", PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "InputEvent")));
 	ClassDB::add_virtual_method(get_class_static(), MethodInfo("forward_canvas_draw_over_viewport", PropertyInfo(Variant::OBJECT, "overlay", PROPERTY_HINT_RESOURCE_TYPE, "Control")));
 	ClassDB::add_virtual_method(get_class_static(), MethodInfo("forward_canvas_force_draw_over_viewport", PropertyInfo(Variant::OBJECT, "overlay", PROPERTY_HINT_RESOURCE_TYPE, "Control")));
@@ -857,6 +865,7 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_SIDE_RIGHT);
 	BIND_ENUM_CONSTANT(CONTAINER_CANVAS_EDITOR_BOTTOM);
 	BIND_ENUM_CONSTANT(CONTAINER_PROPERTY_EDITOR_BOTTOM);
+	BIND_ENUM_CONSTANT(CONTAINTER_SCRIPT_EDITOR_TOOLBAR);
 
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BL);
@@ -867,6 +876,11 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_UR);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_BR);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
+}
+
+
+void EditorPlugin::open_current_script_in_external_editor() {
+	ScriptEditor::get_singleton()->open_current_script_in_external_editor();
 }
 
 EditorPlugin::EditorPlugin() :
