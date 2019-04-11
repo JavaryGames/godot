@@ -140,6 +140,7 @@ public:
 		CONTAINER_PROPERTY_EDITOR_BOTTOM,
 		CONTAINER_PROJECT_SETTING_TAB_LEFT,
 		CONTAINER_PROJECT_SETTING_TAB_RIGHT,
+		CONTAINTER_SCRIPT_EDITOR_TOOLBAR
 	};
 
 	enum DockSlot {
@@ -204,6 +205,8 @@ public:
 	virtual void get_window_layout(Ref<ConfigFile> p_layout);
 	virtual void edited_scene_changed() {} // if changes are pending in editor, apply them
 	virtual bool build(); // builds with external tools. Returns true if safe to continue running scene.
+
+	void open_current_script_in_external_editor();
 
 	EditorInterface *get_editor_interface();
 	ScriptCreateDialog *get_script_create_dialog();
