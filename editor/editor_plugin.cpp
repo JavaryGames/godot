@@ -423,7 +423,7 @@ void EditorPlugin::add_control_to_container(CustomControlContainer p_location, C
 			ProjectSettingsEditor::get_singleton()->get_tabs()->move_child(p_control, 1);
 
 		} break;
-		case CONTAINTER_SCRIPT_EDITOR_TOOLBAR: {
+		case CONTAINER_SCRIPT_EDITOR_TOOLBAR: {
 			ScriptEditor::get_singleton()->get_menu_hb()->add_child(p_control);
 		} break;
 	}
@@ -482,7 +482,7 @@ void EditorPlugin::remove_control_from_container(CustomControlContainer p_locati
 			ProjectSettingsEditor::get_singleton()->get_tabs()->remove_child(p_control);
 
 		} break;
-		case CONTAINTER_SCRIPT_EDITOR_TOOLBAR: {
+		case CONTAINER_SCRIPT_EDITOR_TOOLBAR: {
 			ScriptEditor::get_singleton()->get_menu_hb()->remove_child(p_control);
 		} break;
 	}
@@ -902,7 +902,7 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(CONTAINER_PROPERTY_EDITOR_BOTTOM);
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_LEFT);
 	BIND_ENUM_CONSTANT(CONTAINER_PROJECT_SETTING_TAB_RIGHT);
-	BIND_ENUM_CONSTANT(CONTAINTER_SCRIPT_EDITOR_TOOLBAR);
+	BIND_ENUM_CONSTANT(CONTAINER_SCRIPT_EDITOR_TOOLBAR);
 
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_UL);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_LEFT_BL);
@@ -914,7 +914,6 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(DOCK_SLOT_RIGHT_BR);
 	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
 }
-
 
 void EditorPlugin::open_current_script_in_external_editor() {
 	ScriptEditor::get_singleton()->open_current_script_in_external_editor();
