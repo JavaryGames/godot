@@ -526,7 +526,7 @@
 		</constant>
 		<constant name="CONTAINER_PROPERTY_EDITOR_BOTTOM" value="9" enum="CustomControlContainer">
 		</constant>
-		<constant name="CONTAINTER_SCRIPT_EDITOR_TOOLBAR" value="10" enum="CustomControlContainer">
+		<constant name="CONTAINER_SCRIPT_EDITOR_TOOLBAR" value="10" enum="CustomControlContainer">
 		</constant>
 		<constant name="DOCK_SLOT_LEFT_UL" value="0" enum="DockSlot">
 		</constant>
