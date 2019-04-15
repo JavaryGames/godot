@@ -552,7 +552,7 @@
 		</constant>
 		<constant name="CONTAINER_PROJECT_SETTING_TAB_RIGHT" value="11" enum="CustomControlContainer">
 		</constant>
-		<constant name="CONTAINTER_SCRIPT_EDITOR_TOOLBAR" value="12" enum="CustomControlContainer">
+		<constant name="CONTAINER_SCRIPT_EDITOR_TOOLBAR" value="12" enum="CustomControlContainer">
 		</constant>
 		<constant name="DOCK_SLOT_LEFT_UL" value="0" enum="DockSlot">
 		</constant>
