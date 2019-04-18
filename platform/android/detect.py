@@ -207,15 +207,17 @@ def configure(env):
     env.Append(CPPFLAGS=["-isystem", env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++abi/include"])
     env.Append(CXXFLAGS=["-std=gnu++14"])
 
-    # Disable exceptions and rtti on non-tools (template) builds
-    if env['tools']:
-        env.Append(CXXFLAGS=['-frtti'])
+    ndk_version = get_ndk_version(env["ANDROID_NDK_ROOT"])
+    if ndk_version != None and LooseVersion(ndk_version) >= LooseVersion("15.0.4075724"):
+        print("Using NDK unified headers")
+        sysroot = env["ANDROID_NDK_ROOT"] + "/sysroot"
+        env.Append(CPPFLAGS=["-isystem", sysroot + "/usr/include"])
+        env.Append(CPPFLAGS=["-isystem", sysroot + "/usr/include/" + abi_subpath])
+        # For unified headers this define has to be set manually
+        env.Append(CPPFLAGS=["-D__ANDROID_API__=" + str(get_platform(env['ndk_platform']))])
     else:
-        env.Append(CXXFLAGS=['-fno-rtti', '-fno-exceptions'])
-        # Don't use dynamic_cast, necessary with no-rtti.
-        env.Append(CPPDEFINES=['NO_SAFE_CAST'])
-
-    lib_sysroot = env["ANDROID_NDK_ROOT"] + "/platforms/" + env['ndk_platform'] + "/" + env['ARCH']
+        print("Using NDK deprecated headers")
+        env.Append(CPPFLAGS=["-isystem", lib_sysroot + "/usr/include"])
 
     # Using NDK unified headers (NDK r15+)
     sysroot = env["ANDROID_NDK_ROOT"] + "/sysroot"
@@ -256,22 +258,24 @@ def configure(env):
     env.Append(CCFLAGS=target_opts)
     env.Append(CCFLAGS=common_opts)
 
-    # Link flags
-
-    ndk_version = get_ndk_version(env["ANDROID_NDK_ROOT"])
-    if ndk_version != None and LooseVersion(ndk_version) >= LooseVersion("17.1.4828580"):
-        env.Append(LINKFLAGS=['-Wl,--exclude-libs,libgcc.a', '-Wl,--exclude-libs,libatomic.a', '-nostdlib++'])
+    if env['android_stl']:
+        env.Append(CPPPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/gnu-libstdc++/4.9/include"])
+        env.Append(CPPPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/gnu-libstdc++/4.9/libs/" + arch_subpath + "/include"])
+        env.Append(LIBPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/gnu-libstdc++/4.9/libs/" + arch_subpath])
+        env.Append(CXXFLAGS=["-fexceptions", "-frtti"])
+        env.Append(LIBS=["gnustl_static"])
     else:
-        env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/" + arch_subpath + "/libandroid_support.a"])
-    env.Append(LINKFLAGS=['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel'])
-    env.Append(LIBPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/" + arch_subpath + "/"])
-    env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/" + arch_subpath + "/libc++_shared.so"])
+        env.Append(CXXFLAGS=['-fno-rtti', '-fno-exceptions', '-DNO_SAFE_CAST'])
 
+    ## Link flags
+
+    env['LINKFLAGS'] = ['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel']
     if env["android_arch"] == "armv7":
         env.Append(LINKFLAGS='-Wl,--fix-cortex-a8'.split())
     env.Append(LINKFLAGS='-Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now'.split())
     env.Append(LINKFLAGS='-Wl,-soname,libgodot_android.so -Wl,--gc-sections'.split())
-
+    if mt_link:
+        env.Append(LINKFLAGS=['-Wl,--threads'])
     env.Append(LINKFLAGS=target_opts)
     env.Append(LINKFLAGS=common_opts)
 

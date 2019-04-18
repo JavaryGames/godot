@@ -2062,6 +2062,7 @@ bool ScriptEditor::open_script_in_external_editor(const RES &p_resource, int p_l
 	if (err == OK)
 		return false;
 	WARN_PRINT("Couldn't open external text editor, using internal");
+	return false;
 }
 
 
