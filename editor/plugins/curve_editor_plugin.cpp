@@ -747,6 +747,7 @@ void CurveEditor::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("_on_preset_item_selected"), &CurveEditor::on_preset_item_selected);
 	ClassDB::bind_method(D_METHOD("_curve_changed"), &CurveEditor::_curve_changed);
 	ClassDB::bind_method(D_METHOD("_on_context_menu_item_selected"), &CurveEditor::on_context_menu_item_selected);
+	ClassDB::bind_method(D_METHOD("set_curve"), &CurveEditor::set_curve);
 }
 
 //---------------
