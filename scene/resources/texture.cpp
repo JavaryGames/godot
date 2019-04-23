@@ -1594,18 +1594,18 @@ void CurveTexture::set_curve(Ref<Curve> p_curve) {
 void CurveTexture::_update() {
 
 	PoolVector<uint8_t> data;
-	data.resize(_width * sizeof(float));
+	data.resize(_width * sizeof(uint8_t));
 
 	// The array is locked in that scope
 	{
 		PoolVector<uint8_t>::Write wd8 = data.write();
-		float *wd = (float *)wd8.ptr();
+		uint8_t *wd = wd8.ptr();
 
 		if (_curve.is_valid()) {
 			Curve &curve = **_curve;
 			for (int i = 0; i < _width; ++i) {
 				float t = i / static_cast<float>(_width);
-				wd[i] = curve.interpolate_baked(t);
+				wd[i] = (uint8_t)CLAMP(curve.interpolate_baked(t) * 255.0, 0.0, 255.0);
 			}
 
 		} else {
@@ -1615,9 +1615,9 @@ void CurveTexture::_update() {
 		}
 	}
 
-	Ref<Image> image = memnew(Image(_width, 1, false, Image::FORMAT_RF, data));
+	Ref<Image> image = memnew(Image(_width, 1, false, Image::FORMAT_R8, data));
 
-	VS::get_singleton()->texture_allocate(_texture, _width, 1, 0, Image::FORMAT_RF, VS::TEXTURE_TYPE_2D, VS::TEXTURE_FLAG_FILTER);
+	VS::get_singleton()->texture_allocate(_texture, _width, 1, 0, Image::FORMAT_R8, VS::TEXTURE_TYPE_2D, VS::TEXTURE_FLAG_FILTER);
 	VS::get_singleton()->texture_set_data(_texture, image);
 
 	emit_changed();
