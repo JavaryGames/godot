@@ -202,7 +202,7 @@ public:
 	virtual void edited_scene_changed() {} // if changes are pending in editor, apply them
 	virtual bool build(); // builds with external tools. Returns true if safe to continue running scene.
 
-	void open_current_script_in_external_editor();
+	void open_current_script_in_external_editor(int line, int column);
 
 	EditorInterface *get_editor_interface();
 	ScriptCreateDialog *get_script_create_dialog();

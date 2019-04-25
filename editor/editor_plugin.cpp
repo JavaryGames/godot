@@ -878,8 +878,8 @@ void EditorPlugin::_bind_methods() {
 	BIND_ENUM_CONSTANT(DOCK_SLOT_MAX);
 }
 
-void EditorPlugin::open_current_script_in_external_editor() {
-	ScriptEditor::get_singleton()->open_current_script_in_external_editor();
+void EditorPlugin::open_current_script_in_external_editor(int line, int column) {
+	ScriptEditor::get_singleton()->open_current_script_in_external_editor(line, column);
 }
 
 EditorPlugin::EditorPlugin() :

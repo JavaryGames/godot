@@ -406,7 +406,7 @@ public:
 
 	_FORCE_INLINE_ bool edit(const RES &p_resource, bool p_grab_focus = true) { return edit(p_resource, -1, 0, p_grab_focus); }
 	bool edit(const RES &p_resource, int p_line, int p_col, bool p_grab_focus = true);
-	bool open_current_script_in_external_editor();
+	bool open_current_script_in_external_editor(int line, int column);
 	bool open_script_in_external_editor(const RES &p_resource, int p_line, int p_col);
 	void get_breakpoints(List<String> *p_breakpoints);
 
@@ -429,7 +429,7 @@ public:
 
 	void goto_help(const String &p_desc) { _help_class_goto(p_desc); }
 
-	HBoxContainer* get_menu_hb() { return menu_hb; };
+	HBoxContainer *get_menu_hb() { return menu_hb; };
 
 	bool can_take_away_focus() const;
 
