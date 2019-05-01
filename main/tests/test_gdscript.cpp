@@ -816,6 +816,12 @@ static void _disassemble_class(const Ref<GDScript> &p_class, const Vector<String
 					txt += DADDR(1);
 					incr = 2;
 				} break;
+				case GDScriptFunction::OPCODE_AWAIT: {
+
+					txt += " await ";
+					incr = 2;
+
+				} break;
 				case GDScriptFunction::OPCODE_JUMP: {
 
 					txt += " jump ";

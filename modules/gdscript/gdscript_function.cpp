@@ -215,6 +215,7 @@ static String _get_var_type(const Variant *p_type) {
 		&&OPCODE_YIELD,                       \
 		&&OPCODE_YIELD_SIGNAL,                \
 		&&OPCODE_YIELD_RESUME,                \
+		&&OPCODE_AWAIT,                       \
 		&&OPCODE_JUMP,                        \
 		&&OPCODE_JUMP_IF,                     \
 		&&OPCODE_JUMP_IF_NOT,                 \
@@ -426,15 +427,16 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 	}
 	bool exit_ok = false;
 #endif
-#define CATCH_CRASH_THROW catch (String exception) { \
-	String message = exception + "\nOn " + String(name) + " - " + _script->path + ":" + itos(line); \
-		if (Engine::get_singleton()->has_singleton("CrashThrow")) { \
-			Object *crash = Engine::get_singleton()->get_singleton_object("CrashThrow"); \
-			crash->call("Throw", message); \
-			GD_ERR_BREAK(1); \
-		} else { \
-			throw message.utf8().get_data(); \
-		} \
+#define CATCH_CRASH_THROW                                                                               \
+	catch (String exception) {                                                                          \
+		String message = exception + "\nOn " + String(name) + " - " + _script->path + ":" + itos(line); \
+		if (Engine::get_singleton()->has_singleton("CrashThrow")) {                                     \
+			Object *crash = Engine::get_singleton()->get_singleton_object("CrashThrow");                \
+			crash->call("Throw", message);                                                              \
+			GD_ERR_BREAK(1);                                                                            \
+		} else {                                                                                        \
+			throw message.utf8().get_data();                                                            \
+		}                                                                                               \
 	}
 
 #ifdef DEBUG_ENABLED
@@ -572,7 +574,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				bool valid;
 				try {
 					dst->set(*index, *value, &valid);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -605,7 +608,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #else
 				try {
 					*dst = src->get(*index, &valid);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 
 #endif
 #ifdef DEBUG_ENABLED
@@ -640,7 +644,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 				bool valid;
 				try {
 					dst->set_named(*index, *value, &valid);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -673,7 +678,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #else
 				try {
 					*dst = src->get_named(*index, &valid);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 #endif
 #ifdef DEBUG_ENABLED
 				if (!valid) {
@@ -702,7 +708,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #ifndef DEBUG_ENABLED
 				try {
 					ClassDB::set_property(p_instance->owner, *index, *src, &valid);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 #else
 				bool ok = ClassDB::set_property(p_instance->owner, *index, *src, &valid);
 				if (!ok) {
@@ -728,7 +735,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 #ifndef DEBUG_ENABLED
 				try {
 					ClassDB::get_property(p_instance->owner, *index, *dst);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 #else
 				bool ok = ClassDB::get_property(p_instance->owner, *index, *dst);
 				if (!ok) {
@@ -1097,7 +1105,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 						base->call_ptr(*methodname, (const Variant **)argptrs, argc, NULL, err);
 					}
-				} CATCH_CRASH_THROW;
+				}
+				CATCH_CRASH_THROW;
 #ifdef DEBUG_ENABLED
 				if (GDScriptLanguage::get_singleton()->profiling) {
 					function_call_time += OS::get_singleton()->get_ticks_usec() - call_time;
@@ -1162,7 +1171,8 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 				try {
 					GDScriptFunctions::call(func, (const Variant **)argptrs, argc, *dst, err);
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 
 #ifdef DEBUG_ENABLED
 				if (err.error != Variant::CallError::CALL_OK) {
@@ -1259,81 +1269,139 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 
 						OPCODE_BREAK;
 					}
-				} CATCH_CRASH_THROW
+				}
+				CATCH_CRASH_THROW
 
 				ip += 4 + argc;
 			}
 			DISPATCH_OPCODE;
 
 			OPCODE(OPCODE_YIELD)
-			OPCODE(OPCODE_YIELD_SIGNAL) {
-
-				int ipofs = 1;
-				if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL) {
-					CHECK_SPACE(4);
-					ipofs += 2;
-				} else {
-					CHECK_SPACE(2);
+			OPCODE(OPCODE_YIELD_SIGNAL)
+			OPCODE(OPCODE_AWAIT) {
+				int ipofs;
+				switch (_code_ptr[ip]) {
+					case OPCODE_YIELD_SIGNAL:
+						CHECK_SPACE(4);
+						ipofs = 3;
+						break;
+					case OPCODE_YIELD:
+						CHECK_SPACE(2);
+						ipofs = 1;
+						break;
+					case OPCODE_AWAIT:
+						CHECK_SPACE(3);
+						ipofs = 2;
+						break;
 				}
 
-				Ref<GDScriptFunctionState> gdfs = memnew(GDScriptFunctionState);
-				gdfs->function = this;
+				// Parse first argument
 
-				gdfs->state.stack.resize(alloca_size);
-				//copy variant stack
-				for (int i = 0; i < _stack_size; i++) {
-					memnew_placement(&gdfs->state.stack.write[sizeof(Variant) * i], Variant(stack[i]));
-				}
-				gdfs->state.stack_size = _stack_size;
-				gdfs->state.self = self;
-				gdfs->state.alloca_size = alloca_size;
-				gdfs->state.script = Ref<GDScript>(_script);
-				gdfs->state.ip = ip + ipofs;
-				gdfs->state.line = line;
-				gdfs->state.instance_id = (p_instance && p_instance->get_owner()) ? p_instance->get_owner()->get_instance_id() : 0;
-				//gdfs->state.result_pos=ip+ipofs-1;
-				gdfs->state.defarg = defarg;
-				gdfs->state.instance = p_instance;
-				gdfs->function = this;
+				Object *obj = NULL;
 
-				retvalue = gdfs;
-
-				if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL) {
-					//do the oneshot connect
+				if ((_code_ptr[ip] != OPCODE_YIELD_SIGNAL) || (_code_ptr[ip] != OPCODE_AWAIT)) {
 					GET_VARIANT_PTR(argobj, 1);
-					GET_VARIANT_PTR(argname, 2);
 
 #ifdef DEBUG_ENABLED
-					if (argobj->get_type() != Variant::OBJECT) {
+					if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL && argobj->get_type() != Variant::OBJECT) {
 						err_text = "First argument of yield() not of type object.";
 						OPCODE_BREAK;
 					}
+#endif
+					obj = argobj->operator Object *();
+
+#ifdef DEBUG_ENABLED
+
+					if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL) {
+						if (!obj) {
+							err_text = "First argument of yield() is null.";
+							OPCODE_BREAK;
+						}
+						if (ScriptDebugger::get_singleton()) {
+							if (!ObjectDB::instance_validate(obj)) {
+								err_text = "First argument of yield() is a previously freed instance.";
+								OPCODE_BREAK;
+							}
+						}
+					}
+#endif
+
+					if (_code_ptr[ip] == OPCODE_AWAIT) {
+						if (obj != NULL && obj->is_class_ptr(GDScriptFunctionState::get_class_ptr_static())) {
+							// Object is a FunctionState; same behavior as yield(_,"completed")
+							printf("funcstate argobj.type = %d, %d\n", argobj->get_type(), obj == NULL);
+						} else {
+							// return argobj immediately.
+							printf("variant argobj.type = %d, %d, %d\n", argobj->get_type(), obj == NULL, argobj->operator unsigned int());
+
+							retvalue = argobj;
+#ifdef DEBUG_ENABLED
+							exit_ok = true;
+#endif
+							// Jump to after YIELD_RETURN
+							ip += 4;
+
+							DISPATCH_OPCODE;
+						}
+					}
+				}
+
+				// Parse second argument
+
+				String signal;
+
+				if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL) {
+					GET_VARIANT_PTR(argname, 2);
+#ifdef DEBUG_ENABLED
 					if (argname->get_type() != Variant::STRING) {
 						err_text = "Second argument of yield() not a string (for signal name).";
 						OPCODE_BREAK;
 					}
 #endif
-
-					Object *obj = argobj->operator Object *();
-					String signal = argname->operator String();
+					signal = argname->operator String();
 
 #ifdef DEBUG_ENABLED
-					if (!obj) {
-						err_text = "First argument of yield() is null.";
-						OPCODE_BREAK;
-					}
-					if (ScriptDebugger::get_singleton()) {
-						if (!ObjectDB::instance_validate(obj)) {
-							err_text = "First argument of yield() is a previously freed instance.";
-							OPCODE_BREAK;
-						}
-					}
 					if (signal.length() == 0) {
 
 						err_text = "Second argument of yield() is an empty string (for signal name).";
 						OPCODE_BREAK;
 					}
+#endif
 
+				} else if (_code_ptr[ip] == OPCODE_AWAIT) {
+					signal = String("completed");
+				}
+
+				Ref<GDScriptFunctionState> gdfs = memnew(GDScriptFunctionState);
+
+				// Setup FunctionState
+				{
+					gdfs->function = this;
+
+					gdfs->state.stack.resize(alloca_size);
+					//copy variant stack
+					for (int i = 0; i < _stack_size; i++) {
+						memnew_placement(&gdfs->state.stack.write[sizeof(Variant) * i], Variant(stack[i]));
+					}
+					gdfs->state.stack_size = _stack_size;
+					gdfs->state.self = self;
+					gdfs->state.alloca_size = alloca_size;
+					gdfs->state.script = Ref<GDScript>(_script);
+					gdfs->state.ip = ip + ipofs;
+					gdfs->state.line = line;
+					gdfs->state.instance_id = (p_instance && p_instance->get_owner()) ? p_instance->get_owner()->get_instance_id() : 0;
+					//gdfs->state.result_pos=ip+ipofs-1;
+					gdfs->state.defarg = defarg;
+					gdfs->state.instance = p_instance;
+					gdfs->function = this;
+				}
+
+				retvalue = gdfs;
+
+				if (_code_ptr[ip] == OPCODE_YIELD_SIGNAL || _code_ptr[ip] == OPCODE_AWAIT) {
+					//do the oneshot connect
+
+#ifdef DEBUG_ENABLED
 					Error err = obj->connect(signal, gdfs.ptr(), "_signal_callback", varray(gdfs), Object::CONNECT_ONESHOT);
 					if (err != OK) {
 						err_text = "Error connecting to signal: " + signal + " during yield().";
