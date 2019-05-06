@@ -231,7 +231,10 @@ public class PaymentsManager {
 
 			@Override
 			protected void canceled() {
-				godotPaymentV3.callbackCancel();
+				// Here this shouldn't ever be null, but crash reports show a NullPointerException, so just-in-case check added
+				if (godotPaymentV3 != null) {
+					godotPaymentV3.callbackCancel();
+				}
 			}
 		}
 				.handlePurchaseRequest(resultCode, data);
