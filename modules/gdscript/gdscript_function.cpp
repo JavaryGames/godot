@@ -1909,6 +1909,17 @@ Variant GDScriptFunctionState::resume(const Variant &p_arg) {
 #endif
 	}
 
+#ifdef DEBUG_ENABLED
+	if (ScriptDebugger::get_singleton())
+		GDScriptLanguage::get_singleton()->exit_function();
+	if (state.stack_size) {
+		//free stack
+		Variant *stack = (Variant *)state.stack.ptr();
+		for (int i = 0; i < state.stack_size; i++)
+			stack[i].~Variant();
+	}
+#endif
+
 	return ret;
 }
 
