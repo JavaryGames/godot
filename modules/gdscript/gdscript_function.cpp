@@ -1350,6 +1350,17 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 						OPCODE_BREAK;
 					}
 #else
+					if (!obj) {
+						try {
+							String exception = "First argument of yield() is null.";
+							throw exception;
+						} CATCH_CRASH_THROW
+					} else if (!ObjectDB::instance_validate(obj)) {
+						try {
+							String exception = "First argument of yield() is a previously freed instance.";
+							throw exception;
+						} CATCH_CRASH_THROW
+					}
 					obj->connect(signal, gdfs.ptr(), "_signal_callback", varray(gdfs), Object::CONNECT_ONESHOT);
 #endif
 				}
