@@ -1091,7 +1091,13 @@ void Variant::call_ptr(const StringName &p_method, const Variant **p_args, int p
 				return;
 			}
 		}
-
+#else
+		if (_get_obj().ref.is_null()) {
+			if (!ObjectDB::instance_validate(obj)) {
+				String msg = "Trying to call function '" + p_method.operator String() + "' in object already freed.";
+				throw msg;
+			}
+		}
 #endif
 		ret = _get_obj().obj->call(p_method, p_args, p_argcount, r_error);
 
