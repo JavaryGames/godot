@@ -101,16 +101,26 @@ struct GDScriptDataType {
 					return false;
 				}
 				Object *obj = p_variant.operator Object *();
-				Ref<Script> base = obj && obj->get_script_instance() ? obj->get_script_instance()->get_script() : NULL;
-				bool valid = false;
-				while (base.is_valid()) {
-					if (base == script_type) {
-						valid = true;
-						break;
+				if (obj) {
+					if (!ObjectDB::instance_validate(obj)) {
+						ERR_EXPLAIN("Invalid object instance (already freed?)");
+						ERR_FAIL_V(false);
 					}
-					base = base->get_base_script();
+					Ref<Script> base;
+					if (obj->get_script_instance()) {
+						base = obj->get_script_instance()->get_script();
+					}
+					bool valid = false;
+					while (base.is_valid()) {
+						if (base == script_type) {
+							valid = true;
+							break;
+						}
+						base = base->get_base_script();
+					}
+					return valid;
 				}
-				return valid;
+				return true;
 			} break;
 		}
 		return false;
