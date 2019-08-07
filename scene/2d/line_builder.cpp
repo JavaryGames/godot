@@ -530,7 +530,8 @@ void LineBuilder::strip_add_tri(Vector2 up, Orientation orientation) {
 	if (texture_mode != Line2D::LINE_TEXTURE_NONE) {
 		// UVs are just one slice of the texture all along
 		// (otherwise we can't share the bottom vertice)
-		uvs.push_back(uvs[_last_index[opposite_orientation]]);
+		Vector2 uv = uvs[_last_index[opposite_orientation]];
+		uvs.push_back(uv);
 	}
 
 	indices.push_back(_last_index[opposite_orientation]);
