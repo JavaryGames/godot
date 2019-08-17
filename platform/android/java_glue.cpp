@@ -798,6 +798,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 		_getClipboard = env->GetMethodID(cls, "getClipboard", "()Ljava/lang/String;");
 		_setClipboard = env->GetMethodID(cls, "setClipboard", "(Ljava/lang/String;)V");
 		_requestPermission = env->GetMethodID(cls, "requestPermission", "(Ljava/lang/String;)Z");
+		_vibrate = p_env->GetMethodID(cls, "vibrate", "(I)V");
 
 		if (cls) {
 			jclass c = env->GetObjectClass(gob);
@@ -830,7 +831,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 		AudioDriverAndroid::setup(gob);
 	}
 
-	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion);
+	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion, _vibrate);
 
 	char wd[500];
 	getcwd(wd, 500);
