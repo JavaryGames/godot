@@ -245,11 +245,17 @@ Error InAppStore::restore_purchases() {
 			case SKPaymentTransactionStateRestored: {
 				printf("status transaction restored!\n");
 				String pid = String::utf8([transaction.originalTransaction.payment.productIdentifier UTF8String]);
+				String transactionId = String::utf8([transaction.transactionIdentifier UTF8String]);
+				NSDate* transactionDate = transaction.originalTransaction.transactionDate;
+				NSString *resultDate = [NSString stringWithFormat:@"%.0f", [transactionDate timeIntervalSince1970]];
+				String transactionDateString = String::utf8([resultDate UTF8String]);
 				InAppStore::get_singleton()->_record_purchase(pid);
 				Dictionary ret;
 				ret["type"] = "restore";
 				ret["result"] = "ok";
 				ret["product_id"] = pid;
+				ret["transaction_id"] = transactionId;
+				ret["transaction_date"] = transactionDateString;
 				InAppStore::get_singleton()->_post_event(ret);
 				[[SKPaymentQueue defaultQueue] finishTransaction:transaction];
 			} break;
