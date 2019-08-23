@@ -1436,6 +1436,17 @@ Error Object::connect(const StringName &p_signal, Object *p_to_object, const Str
 
 	ERR_FAIL_NULL_V(p_to_object, ERR_INVALID_PARAMETER);
 
+#ifndef DEBUG_ENABLED
+	if (!ObjectDB::instance_validate(this)) {
+		String exception = "Calling connect on an object that was already freed";
+		throw exception;
+	}
+	if (!p_to_object || !ObjectDB::instance_validate(p_to_object)) {
+		String exception = "Connecting a signal to an object that was already freed";
+		throw exception;
+	}
+#endif // ! DEBUG_ENABLED
+
 	Signal *s = signal_map.getptr(p_signal);
 	if (!s) {
 		bool signal_is_valid = ClassDB::has_signal(get_class_name(), p_signal);
@@ -1462,6 +1473,13 @@ Error Object::connect(const StringName &p_signal, Object *p_to_object, const Str
 		signal_map[p_signal] = Signal();
 		s = &signal_map[p_signal];
 	}
+
+#ifndef DEBUG_ENABLED
+	if (!s) {
+		String exception = "Don't know how, but the signal struct does not exist";
+		throw exception;
+	}
+#endif // ! DEBUG_ENABLED
 
 	Signal::Target target(p_to_object->get_instance_id(), p_to_method);
 	if (s->slot_map.has(target)) {
