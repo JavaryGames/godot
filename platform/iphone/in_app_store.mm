@@ -178,12 +178,16 @@ Error InAppStore::restore_purchases() {
 				printf("status purchased!\n");
 				String pid = String::utf8([transaction.payment.productIdentifier UTF8String]);
 				String transactionId = String::utf8([transaction.transactionIdentifier UTF8String]);
+				NSDate* transactionDate = transaction.originalTransaction.transactionDate;
+				NSString *resultDate = [NSString stringWithFormat:@"%.0f", [transactionDate timeIntervalSince1970]];
+				String transactionDateString = String::utf8([resultDate UTF8String]);
 				InAppStore::get_singleton()->_record_purchase(pid);
 				Dictionary ret;
 				ret["type"] = "purchase";
 				ret["result"] = "ok";
 				ret["product_id"] = pid;
 				ret["transaction_id"] = transactionId;
+				ret["transaction_date"] = transactionDateString;
 
 				NSData *receipt = nil;
 				int sdk_version = 6;
@@ -265,6 +269,13 @@ Error InAppStore::restore_purchases() {
 		};
 	};
 };
+
+- (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
+	Dictionary ret;
+	ret["type"] = "restore_finish";
+	ret["result"] = "ok";
+	InAppStore::get_singleton()->_post_event(ret);
+}
 
 @end
 
