@@ -1367,7 +1367,9 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 							throw exception;
 						} CATCH_CRASH_THROW
 					}
-					obj->connect(signal, gdfs.ptr(), "_signal_callback", varray(gdfs), Object::CONNECT_ONESHOT);
+					try {
+						obj->connect(signal, gdfs.ptr(), "_signal_callback", varray(gdfs), Object::CONNECT_ONESHOT);
+					} CATCH_CRASH_THROW
 #endif
 				}
 
