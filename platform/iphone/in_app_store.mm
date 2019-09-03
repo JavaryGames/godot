@@ -222,7 +222,12 @@ Error InAppStore::restore_purchases() {
 					receipt_to_send = [receipt description];
 				}
 				Dictionary receipt_ret;
-				receipt_ret["receipt"] = [(receipt_to_send != nil ? [receipt_to_send base64EncodedStringWithOptions:0] : @"") UTF8String];
+				if (receipt_to_send != nil){
+					// receipt_ret["receipt"] = [[receipt_to_send base64EncodedStringWithOptions:0] UTF8String];
+					receipt_ret["receipt"] = "";
+				}else{
+					receipt_ret["receipt"] = "";
+				}
 				receipt_ret["sdk"] = sdk_version;
 				ret["receipt"] = receipt_ret;
 
