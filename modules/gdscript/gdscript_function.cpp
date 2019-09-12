@@ -505,10 +505,14 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 					err_text = "Right operand of 'is' is not a class.";
 					OPCODE_BREAK;
 				}
+
+				if (!ObjectDB::instance_validate(*a)) {
+					WARN_PRINT("Left operand is not valid in `is` operation");
+				}
 #endif
 
 				bool extends_ok = false;
-				if (a->get_type() == Variant::OBJECT && a->operator Object *() != NULL) {
+				if (a->get_type() == Variant::OBJECT && a->operator Object *() != NULL && ObjectDB::instance_validate(*a)) {
 					Object *obj_A = *a;
 					Object *obj_B = *b;
 
