@@ -178,3 +178,4 @@ def configure(env):
 
     env.Prepend(CPPPATH=['#platform/iphone'])
     env.Append(CPPDEFINES=['IPHONE_ENABLED', 'UNIX_ENABLED', 'GLES_ENABLED', 'COREAUDIO_ENABLED'])
+    env.Append(CPPFLAGS=['-DEBUG_INFORMATION_FORMAT=dwarf-with-dsym'])
