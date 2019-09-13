@@ -173,4 +173,4 @@ def configure(env):
     env['ENV']['CODESIGN_ALLOCATE'] = '/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/codesign_allocate'
 
     env.Append(CPPPATH=['#platform/iphone'])
-    env.Append(CPPFLAGS=['-DIPHONE_ENABLED', '-DUNIX_ENABLED', '-DGLES_ENABLED', '-DCOREAUDIO_ENABLED'])
+    env.Append(CPPFLAGS=['-DIPHONE_ENABLED', '-DUNIX_ENABLED', '-DGLES_ENABLED', '-DCOREAUDIO_ENABLED', '-DEBUG_INFORMATION_FORMAT=dwarf-with-dsym'])
