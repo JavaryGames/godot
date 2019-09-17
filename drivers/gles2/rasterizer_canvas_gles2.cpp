@@ -886,8 +886,9 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(4, 18) = (source.position.x + source.size.x) * texpixel_size.x;
 				_BUFFER(4, 19) = (source.position.y + source.size.y) * texpixel_size.y;
 
-				if (int(np->axis_x) == 1) { // Tile
-					float center_right_x = MIN(np->rect.position.x + source.size.x, np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT]);
+				if (int(np->axis_x) != 0) { // Tile
+					float center_right_x = np->rect.position.x + np->margin[MARGIN_LEFT];
+					// Collapse center horizontal quads
 					_BUFFER(0, 8) = center_right_x;
 					_BUFFER(1, 8) = center_right_x;
 					_BUFFER(2, 8) = center_right_x;
@@ -895,15 +896,15 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 					_BUFFER(4, 8) = center_right_x;
 				}
 
-				if (int(np->axis_y) == 1) { // Tile
-					float center_bottom_y = MIN(np->rect.position.y + source.size.y, np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM]);
+				if (int(np->axis_y) != 0) { // Tile
+					// Collapse center vertical quads
+					float center_bottom_y = np->rect.position.y + np->margin[MARGIN_TOP];
 					_BUFFER(2, 1) = center_bottom_y;
 					_BUFFER(2, 5) = center_bottom_y;
 					_BUFFER(2, 9) = center_bottom_y;
 					_BUFFER(2, 13) = center_bottom_y;
 					_BUFFER(2, 17) = center_bottom_y;
 				}
-#undef _BUFFER
 
 				glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
 				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * (25 + 25) * 2, buffer);
@@ -918,8 +919,42 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 
 				glDrawElements(GL_TRIANGLES, 18 * 3 - (np->draw_center ? 0 : 2 * 3), GL_UNSIGNED_BYTE, NULL);
 
-				glBindBuffer(GL_ARRAY_BUFFER, 0);
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+#define _EIDX(y, x) (y * 5 + x)
+				if (int(np->axis_x) == 1) { // Tile
+					GLuint ninepatch_elements;
+					
+					glGenBuffers(1, &ninepatch_elements);
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ninepatch_elements);
+
+					uint8_t elems[3 * 2] = {
+						_EIDX(0, 1), _EIDX(0, 2), _EIDX(1, 2),
+						_EIDX(1, 2), _EIDX(1, 1), _EIDX(0, 1),
+					};
+
+					glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elems), elems, GL_STATIC_DRAW);
+
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ninepatch_elements);
+
+					_BUFFER(0, 8) = source.size.x - np->margin[MARGIN_LEFT] + MIN(np->rect.size.x - np->margin[MARGIN_RIGHT] - np->margin[MARGIN_LEFT], source.size.x) - source.size.x;
+					_BUFFER(1, 8) = source.size.x - np->margin[MARGIN_LEFT] + MIN(np->rect.size.x - np->margin[MARGIN_RIGHT] - np->margin[MARGIN_LEFT], source.size.x) - np->margin[MARGIN_RIGHT];
+
+					glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
+					glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * (25 + 25) * 2, buffer);
+
+					glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, NULL);
+
+				}
+
+
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+				glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+#undef _EIDX
+
+#undef _BUFFER
 
 			} break;
 
@@ -2053,28 +2088,28 @@ void RasterizerCanvasGLES2::initialize() {
 			_EIDX(0, 3), _EIDX(0, 4), _EIDX(1, 4),
 			_EIDX(1, 4), _EIDX(1, 3), _EIDX(0, 3),
 
-			// second row
+			// // second row
 
-			_EIDX(1, 0), _EIDX(1, 1), _EIDX(2, 1),
-			_EIDX(2, 1), _EIDX(2, 0), _EIDX(1, 0),
+			// _EIDX(1, 0), _EIDX(1, 1), _EIDX(2, 1),
+			// _EIDX(2, 1), _EIDX(2, 0), _EIDX(1, 0),
 
-			// the center one would be here, but we'll put it at the end
-			// so it's easier to disable the center and be able to use
-			// one draw call for both
+			// // the center one would be here, but we'll put it at the end
+			// // so it's easier to disable the center and be able to use
+			// // one draw call for both
 
 			_EIDX(1, 3), _EIDX(1, 4), _EIDX(2, 4),
 			_EIDX(2, 4), _EIDX(2, 3), _EIDX(1, 3),
 
-			// third row
+			// // third row
 
-			_EIDX(3, 0), _EIDX(3, 1), _EIDX(4, 1),
-			_EIDX(4, 1), _EIDX(4, 0), _EIDX(3, 0),
+			// _EIDX(3, 0), _EIDX(3, 1), _EIDX(4, 1),
+			// _EIDX(4, 1), _EIDX(4, 0), _EIDX(3, 0),
 
-			_EIDX(3, 1), _EIDX(3, 2), _EIDX(4, 2),
-			_EIDX(4, 2), _EIDX(4, 1), _EIDX(3, 1),
+			// _EIDX(3, 1), _EIDX(3, 2), _EIDX(4, 2),
+			// _EIDX(4, 2), _EIDX(4, 1), _EIDX(3, 1),
 
-			_EIDX(3, 3), _EIDX(3, 4), _EIDX(4, 4),
-			_EIDX(4, 4), _EIDX(4, 3), _EIDX(3, 3),
+			// _EIDX(3, 3), _EIDX(3, 4), _EIDX(4, 4),
+			// _EIDX(4, 4), _EIDX(4, 3), _EIDX(3, 3),
 
 			// center field
 
