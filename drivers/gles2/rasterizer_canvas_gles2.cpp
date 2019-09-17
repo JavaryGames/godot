@@ -722,10 +722,10 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 
 				// this buffer contains [ POS_X POS_Y UV_X UV_Y ] *
 
-				float buffer[16 * 2 + 16 * 2];
+				float buffer[(25 + 25) * 2];
 
 
-#define _BUFFER(row, col) (buffer[(row * 4 * 4) + col])
+#define _BUFFER(row, col) (buffer[(row * 4 * 5) + col])
 				// first row
 
 				_BUFFER(0, 0) = np->rect.position.x;
@@ -734,11 +734,11 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(0, 2) = source.position.x * texpixel_size.x;
 				_BUFFER(0, 3) = source.position.y * texpixel_size.y;
 
-				_BUFFER(0, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
-				_BUFFER(0, 5) = np->rect.position.y;
+					_BUFFER(0, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
+					_BUFFER(0, 5) = np->rect.position.y;
 
-				_BUFFER(0, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
-				_BUFFER(0, 7) = source.position.y * texpixel_size.y;
+					_BUFFER(0, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
+					_BUFFER(0, 7) = source.position.y * texpixel_size.y;
 
 				_BUFFER(0, 8) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
 				_BUFFER(0, 9) = np->rect.position.y;
@@ -746,11 +746,17 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(0, 10) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
 				_BUFFER(0, 11) = source.position.y * texpixel_size.y;
 
-				_BUFFER(0, 12) = np->rect.position.x + np->rect.size.x;
-				_BUFFER(0, 13) = np->rect.position.y;
+					_BUFFER(0, 12) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+					_BUFFER(0, 13) = np->rect.position.y;
 
-				_BUFFER(0, 14) = (source.position.x + source.size.x) * texpixel_size.x;
-				_BUFFER(0, 15) = source.position.y * texpixel_size.y;
+					_BUFFER(0, 14) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+					_BUFFER(0, 15) = source.position.y * texpixel_size.y;
+
+				_BUFFER(0, 16) = np->rect.position.x + np->rect.size.x;
+				_BUFFER(0, 17) = np->rect.position.y;
+
+				_BUFFER(0, 18) = (source.position.x + source.size.x) * texpixel_size.x;
+				_BUFFER(0, 19) = source.position.y * texpixel_size.y;
 
 				// second row
 
@@ -760,11 +766,11 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(1, 2) = source.position.x * texpixel_size.x;
 				_BUFFER(1, 3) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
 
-				_BUFFER(1, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
-				_BUFFER(1, 5) = np->rect.position.y + np->margin[MARGIN_TOP];
+					_BUFFER(1, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
+					_BUFFER(1, 5) = np->rect.position.y + np->margin[MARGIN_TOP];
 
-				_BUFFER(1, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
-				_BUFFER(1, 7) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
+					_BUFFER(1, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
+					_BUFFER(1, 7) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
 
 				_BUFFER(1, 8) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
 				_BUFFER(1, 9) = np->rect.position.y + np->margin[MARGIN_TOP];
@@ -772,11 +778,17 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(1, 10) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
 				_BUFFER(1, 11) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
 
-				_BUFFER(1, 12) = np->rect.position.x + np->rect.size.x;
-				_BUFFER(1, 13) = np->rect.position.y + np->margin[MARGIN_TOP];
+					_BUFFER(1, 12) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+					_BUFFER(1, 13) = np->rect.position.y + np->margin[MARGIN_TOP];
 
-				_BUFFER(1, 14) = (source.position.x + source.size.x) * texpixel_size.x;
-				_BUFFER(1, 15) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
+					_BUFFER(1, 14) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+					_BUFFER(1, 15) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
+
+				_BUFFER(1, 16) = np->rect.position.x + np->rect.size.x;
+				_BUFFER(1, 17) = np->rect.position.y + np->margin[MARGIN_TOP];
+
+				_BUFFER(1, 18) = (source.position.x + source.size.x) * texpixel_size.x;
+				_BUFFER(1, 19) = (source.position.y + np->margin[MARGIN_TOP]) * texpixel_size.y;
 
 				// third row
 
@@ -786,11 +798,11 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(2, 2) = source.position.x * texpixel_size.x;
 				_BUFFER(2, 3) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
-				_BUFFER(2, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
-				_BUFFER(2, 5) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
+					_BUFFER(2, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
+					_BUFFER(2, 5) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
-				_BUFFER(2, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
-				_BUFFER(2, 7) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
+					_BUFFER(2, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
+					_BUFFER(2, 7) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
 				_BUFFER(2, 8) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
 				_BUFFER(2, 9) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
@@ -798,41 +810,85 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				_BUFFER(2, 10) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
 				_BUFFER(2, 11) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
-				_BUFFER(2, 12) = np->rect.position.x + np->rect.size.x;
-				_BUFFER(2, 13) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
+					_BUFFER(2, 12) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+					_BUFFER(2, 13) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
-				_BUFFER(2, 14) = (source.position.x + source.size.x) * texpixel_size.x;
-				_BUFFER(2, 15) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
+					_BUFFER(2, 14) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+					_BUFFER(2, 15) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
+
+				_BUFFER(2, 16) = np->rect.position.x + np->rect.size.x;
+				_BUFFER(2, 17) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
+
+				_BUFFER(2, 18) = (source.position.x + source.size.x) * texpixel_size.x;
+				_BUFFER(2, 19) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
 				// fourth row
 
 				_BUFFER(3, 0) = np->rect.position.x;
-				_BUFFER(3, 1) = np->rect.position.y + np->rect.size.y;
+				_BUFFER(3, 1) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
 				_BUFFER(3, 2) = source.position.x * texpixel_size.x;
-				_BUFFER(3, 3) = (source.position.y + source.size.y) * texpixel_size.y;
+				_BUFFER(3, 3) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
-				_BUFFER(3, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
-				_BUFFER(3, 5) = np->rect.position.y + np->rect.size.y;
+					_BUFFER(3, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
+					_BUFFER(3, 5) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
-				_BUFFER(3, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
-				_BUFFER(3, 7) = (source.position.y + source.size.y) * texpixel_size.y;
+					_BUFFER(3, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
+					_BUFFER(3, 7) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
 				_BUFFER(3, 8) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
-				_BUFFER(3, 9) = np->rect.position.y + np->rect.size.y;
+				_BUFFER(3, 9) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
 				_BUFFER(3, 10) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
-				_BUFFER(3, 11) = (source.position.y + source.size.y) * texpixel_size.y;
+				_BUFFER(3, 11) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
 
-				_BUFFER(3, 12) = np->rect.position.x + np->rect.size.x;
-				_BUFFER(3, 13) = np->rect.position.y + np->rect.size.y;
+					_BUFFER(3, 12) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+					_BUFFER(3, 13) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
 
-				_BUFFER(3, 14) = (source.position.x + source.size.x) * texpixel_size.x;
-				_BUFFER(3, 15) = (source.position.y + source.size.y) * texpixel_size.y;
+					_BUFFER(3, 14) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+					_BUFFER(3, 15) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
+
+				_BUFFER(3, 16) = np->rect.position.x + np->rect.size.x;
+				_BUFFER(3, 17) = np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM];
+
+				_BUFFER(3, 18) = (source.position.x + source.size.x) * texpixel_size.x;
+				_BUFFER(3, 19) = (source.position.y + source.size.y - np->margin[MARGIN_BOTTOM]) * texpixel_size.y;
+
+				// fifth row
+
+				_BUFFER(4, 0) = np->rect.position.x;
+				_BUFFER(4, 1) = np->rect.position.y + np->rect.size.y;
+
+				_BUFFER(4, 2) = source.position.x * texpixel_size.x;
+				_BUFFER(4, 3) = (source.position.y + source.size.y) * texpixel_size.y;
+
+					_BUFFER(4, 4) = np->rect.position.x + np->margin[MARGIN_LEFT];
+					_BUFFER(4, 5) = np->rect.position.y + np->rect.size.y;
+
+					_BUFFER(4, 6) = (source.position.x + np->margin[MARGIN_LEFT]) * texpixel_size.x;
+					_BUFFER(4, 7) = (source.position.y + source.size.y) * texpixel_size.y;
+
+				_BUFFER(4, 8) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+				_BUFFER(4, 9) = np->rect.position.y + np->rect.size.y;
+
+				_BUFFER(4, 10) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+				_BUFFER(4, 11) = (source.position.y + source.size.y) * texpixel_size.y;
+
+					_BUFFER(4, 12) = np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT];
+					_BUFFER(4, 13) = np->rect.position.y + np->rect.size.y;
+
+					_BUFFER(4, 14) = (source.position.x + source.size.x - np->margin[MARGIN_RIGHT]) * texpixel_size.x;
+					_BUFFER(4, 15) = (source.position.y + source.size.y) * texpixel_size.y;
+
+				_BUFFER(4, 16) = np->rect.position.x + np->rect.size.x;
+				_BUFFER(4, 17) = np->rect.position.y + np->rect.size.y;
+
+				_BUFFER(4, 18) = (source.position.x + source.size.x) * texpixel_size.x;
+				_BUFFER(4, 19) = (source.position.y + source.size.y) * texpixel_size.y;
 #undef _BUFFER
 
 				glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
-				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * (16 + 16) * 2, buffer);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * (25 + 25) * 2, buffer);
 
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.ninepatch_elements);
 
@@ -1957,7 +2013,7 @@ void RasterizerCanvasGLES2::initialize() {
 		glGenBuffers(1, &data.ninepatch_vertices);
 		glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (16 + 16) * 2, NULL, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * (25 + 25) * 2, NULL, GL_DYNAMIC_DRAW);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -1965,7 +2021,7 @@ void RasterizerCanvasGLES2::initialize() {
 		glGenBuffers(1, &data.ninepatch_elements);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.ninepatch_elements);
 
-#define _EIDX(y, x) (y * 4 + x)
+#define _EIDX(y, x) (y * 5 + x)
 		uint8_t elems[3 * 2 * 9] = {
 
 			// first row
