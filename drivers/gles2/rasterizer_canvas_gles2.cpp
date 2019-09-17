@@ -1976,8 +1976,8 @@ void RasterizerCanvasGLES2::initialize() {
 			_EIDX(0, 1), _EIDX(0, 2), _EIDX(1, 2),
 			_EIDX(1, 2), _EIDX(1, 1), _EIDX(0, 1),
 
-			_EIDX(0, 2), _EIDX(0, 3), _EIDX(1, 3),
-			_EIDX(1, 3), _EIDX(1, 2), _EIDX(0, 2),
+			_EIDX(0, 3), _EIDX(0, 4), _EIDX(1, 4),
+			_EIDX(1, 4), _EIDX(1, 3), _EIDX(0, 3),
 
 			// second row
 
@@ -1988,19 +1988,19 @@ void RasterizerCanvasGLES2::initialize() {
 			// so it's easier to disable the center and be able to use
 			// one draw call for both
 
-			_EIDX(1, 2), _EIDX(1, 3), _EIDX(2, 3),
-			_EIDX(2, 3), _EIDX(2, 2), _EIDX(1, 2),
+			_EIDX(1, 3), _EIDX(1, 4), _EIDX(2, 4),
+			_EIDX(2, 4), _EIDX(2, 3), _EIDX(1, 3),
 
 			// third row
 
-			_EIDX(2, 0), _EIDX(2, 1), _EIDX(3, 1),
-			_EIDX(3, 1), _EIDX(3, 0), _EIDX(2, 0),
+			_EIDX(3, 0), _EIDX(3, 1), _EIDX(4, 1),
+			_EIDX(4, 1), _EIDX(4, 0), _EIDX(3, 0),
 
-			_EIDX(2, 1), _EIDX(2, 2), _EIDX(3, 2),
-			_EIDX(3, 2), _EIDX(3, 1), _EIDX(2, 1),
+			_EIDX(3, 1), _EIDX(3, 2), _EIDX(4, 2),
+			_EIDX(4, 2), _EIDX(4, 1), _EIDX(3, 1),
 
-			_EIDX(2, 2), _EIDX(2, 3), _EIDX(3, 3),
-			_EIDX(3, 3), _EIDX(3, 2), _EIDX(2, 2),
+			_EIDX(3, 3), _EIDX(3, 4), _EIDX(4, 4),
+			_EIDX(4, 4), _EIDX(4, 3), _EIDX(3, 3),
 
 			// center field
 
