@@ -885,6 +885,24 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 
 				_BUFFER(4, 18) = (source.position.x + source.size.x) * texpixel_size.x;
 				_BUFFER(4, 19) = (source.position.y + source.size.y) * texpixel_size.y;
+
+				if (int(np->axis_x) == 1) { // Tile
+					float center_right_x = MIN(np->rect.position.x + source.size.x, np->rect.position.x + np->rect.size.x - np->margin[MARGIN_RIGHT]);
+					_BUFFER(0, 8) = center_right_x;
+					_BUFFER(1, 8) = center_right_x;
+					_BUFFER(2, 8) = center_right_x;
+					_BUFFER(3, 8) = center_right_x;
+					_BUFFER(4, 8) = center_right_x;
+				}
+
+				if (int(np->axis_y) == 1) { // Tile
+					float center_bottom_y = MIN(np->rect.position.y + source.size.y, np->rect.position.y + np->rect.size.y - np->margin[MARGIN_BOTTOM]);
+					_BUFFER(2, 1) = center_bottom_y;
+					_BUFFER(2, 5) = center_bottom_y;
+					_BUFFER(2, 9) = center_bottom_y;
+					_BUFFER(2, 13) = center_bottom_y;
+					_BUFFER(2, 17) = center_bottom_y;
+				}
 #undef _BUFFER
 
 				glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
