@@ -6463,7 +6463,8 @@ GDScriptParser::DataType GDScriptParser::_reduce_node_type(Node *p_node) {
 		default: {}
 	}
 
-	p_node->set_datatype(_resolve_type(node_type, p_node->line));
+	node_type = _resolve_type(node_type, p_node->line);
+	p_node->set_datatype(node_type);
 	return node_type;
 }
 
