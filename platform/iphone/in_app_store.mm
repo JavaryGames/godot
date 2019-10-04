@@ -70,6 +70,7 @@ void InAppStore::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("pop_pending_event"), &InAppStore::pop_pending_event);
 	ClassDB::bind_method(D_METHOD("finish_transaction"), &InAppStore::finish_transaction);
 	ClassDB::bind_method(D_METHOD("set_auto_finish_transaction"), &InAppStore::set_auto_finish_transaction);
+	ClassDB::bind_method(D_METHOD("apply_currency"), &InAppStore::apply_currency);
 };
 
 @interface ProductsDelegate : NSObject <SKProductsRequestDelegate> {
@@ -348,7 +349,23 @@ void InAppStore::finish_transaction(String product_id) {
 
 void InAppStore::set_auto_finish_transaction(bool b) {
 	auto_finish_transactions = b;
-}
+};
+
+String InAppStore::apply_currency(String locale, float value) {
+	NSDictionary *components = [NSDictionary dictionaryWithObject:[NSString stringWithCString: locale.utf8().get_data()] forKey:NSLocaleCurrencyCode];
+	NSString *localeIdentifier = [NSLocale localeIdentifierFromComponents:components];
+	NSLocale *currentLocale = [[NSLocale alloc] initWithLocaleIdentifier:localeIdentifier];
+
+	NSNumberFormatter *currencyFormatter = [[[NSNumberFormatter alloc] init] autorelease];
+	[currencyFormatter setLocale:currentLocale];
+	[currencyFormatter setMaximumFractionDigits:2];
+	[currencyFormatter setAlwaysShowsDecimalSeparator:YES];
+	[currencyFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
+
+	NSNumber *someAmount = [NSNumber numberWithFloat:value];
+	NSString *applied_string = [currencyFormatter stringFromNumber:someAmount];
+	return [applied_string UTF8String];
+};
 
 InAppStore::~InAppStore(){};
 
