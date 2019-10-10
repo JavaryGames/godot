@@ -631,6 +631,7 @@ void SceneTree::_notification(int p_notification) {
 				break;
 			}
 		} break;
+
 		case NOTIFICATION_WM_GO_BACK_REQUEST: {
 
 			get_root()->propagate_notification(p_notification);
@@ -640,27 +641,23 @@ void SceneTree::_notification(int p_notification) {
 				break;
 			}
 		} break;
-		case NOTIFICATION_OS_MEMORY_WARNING:
-		case NOTIFICATION_OS_IME_UPDATE:
-		case NOTIFICATION_WM_MOUSE_ENTER:
-		case NOTIFICATION_WM_MOUSE_EXIT:
-		case NOTIFICATION_WM_FOCUS_IN:
-		case NOTIFICATION_WM_FOCUS_OUT: {
 
-			if (p_notification == NOTIFICATION_WM_FOCUS_IN) {
-				InputDefault *id = Object::cast_to<InputDefault>(Input::get_singleton());
-				if (id) {
-					id->ensure_touch_mouse_raised();
-				}
+		case NOTIFICATION_WM_FOCUS_IN: {
+
+			InputDefault *id = Object::cast_to<InputDefault>(Input::get_singleton());
+			if (id) {
+				id->ensure_touch_mouse_raised();
 			}
 
 			get_root()->propagate_notification(p_notification);
 		} break;
+
 		case NOTIFICATION_TRANSLATION_CHANGED: {
 			if (!Engine::get_singleton()->is_editor_hint()) {
 				get_root()->propagate_notification(Node::NOTIFICATION_TRANSLATION_CHANGED);
 			}
 		} break;
+
 		case NOTIFICATION_WM_UNFOCUS_REQUEST: {
 
 			notify_group_flags(GROUP_CALL_REALTIME | GROUP_CALL_MULTILEVEL, "input", NOTIFICATION_WM_UNFOCUS_REQUEST);
@@ -680,7 +677,14 @@ void SceneTree::_notification(int p_notification) {
 #endif
 		} break;
 
-		case NOTIFICATION_CRASH: {
+		case NOTIFICATION_OS_MEMORY_WARNING:
+		case NOTIFICATION_OS_IME_UPDATE:
+		case NOTIFICATION_WM_MOUSE_ENTER:
+		case NOTIFICATION_WM_MOUSE_EXIT:
+		case NOTIFICATION_WM_FOCUS_OUT:
+		case NOTIFICATION_CRASH:
+		case NOTIFICATION_APP_RESUMED:
+		case NOTIFICATION_APP_PAUSED: {
 
 			get_root()->propagate_notification(p_notification);
 		} break;

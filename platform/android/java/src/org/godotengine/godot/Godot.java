@@ -123,6 +123,7 @@ public class Godot extends Activity implements SensorEventListener, IDownloaderC
 	private boolean use_immersive = false;
 	private boolean use_debug_opengl = false;
 	private boolean mStatePaused;
+	private boolean activityResumed;
 	private int mState;
 
 	static private Intent mCurrentIntent;
@@ -619,12 +620,7 @@ public class Godot extends Activity implements SensorEventListener, IDownloaderC
 			return;
 		}
 		mView.onPause();
-		mView.queueEvent(new Runnable() {
-			@Override
-			public void run() {
-				GodotLib.focusout();
-			}
-		});
+
 		mSensorManager.unregisterListener(this);
 
 		for (int i = 0; i < singleton_count; i++) {
@@ -653,6 +649,7 @@ public class Godot extends Activity implements SensorEventListener, IDownloaderC
 	@Override
 	protected void onResume() {
 		super.onResume();
+		activityResumed = true;
 		if (!godot_initialized) {
 			if (null != mDownloaderClientStub) {
 				mDownloaderClientStub.connect(this);
@@ -661,12 +658,7 @@ public class Godot extends Activity implements SensorEventListener, IDownloaderC
 		}
 
 		mView.onResume();
-		mView.queueEvent(new Runnable() {
-			@Override
-			public void run() {
-				GodotLib.focusin();
-			}
-		});
+
 		mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_GAME);
 		mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_GAME);

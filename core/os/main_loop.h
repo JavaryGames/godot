@@ -66,6 +66,8 @@ public:
 		NOTIFICATION_WM_ABOUT = 91,
 		NOTIFICATION_CRASH = 92,
 		NOTIFICATION_OS_IME_UPDATE = 93,
+		NOTIFICATION_APP_RESUMED = 1014,
+		NOTIFICATION_APP_PAUSED = 1015,
 	};
 
 	virtual void input_event(const Ref<InputEvent> &p_event);

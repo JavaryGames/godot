@@ -86,6 +86,8 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 	private Godot activity;
 
 	private InputManagerCompat mInputManager;
+	private final Renderer godotRenderer;
+
 	public GodotView(Context context, GodotIO p_io, boolean p_use_gl3, boolean p_use_32_bits, boolean p_use_debug_opengl, Godot p_activity) {
 		super(context);
 		ctx = context;
@@ -100,17 +102,22 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 
 		mInputManager = InputManagerCompat.Factory.getInputManager(this.getContext());
 		mInputManager.registerInputDeviceListener(this, null);
+
+		this.godotRenderer = new Renderer();
+
 		init(false, 16, 0);
 	}
 
 	public GodotView(Context context) {
 		super(context);
 		ctx = context;
+		this.godotRenderer = new Renderer();
 	}
 
 	public GodotView(Context context, boolean translucent, int depth, int stencil) {
 		super(context);
 		init(translucent, depth, stencil);
+		this.godotRenderer = new Renderer();
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
@@ -361,6 +368,34 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 	}
 
 	@Override
+	public void onResume() {
+		super.onResume();
+
+		queueEvent(new Runnable() {
+			@Override
+			public void run() {
+				// Resume the renderer
+				godotRenderer.onActivityResumed();
+				GodotLib.focusin();
+			}
+		});
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+
+		queueEvent(new Runnable() {
+			@Override
+			public void run() {
+				GodotLib.focusout();
+				// Pause the renderer
+				godotRenderer.onActivityPaused();
+			}
+		});
+	}
+
+	@Override
 	public boolean onGenericMotionEvent(MotionEvent event) {
 
 		if ((event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK && event.getAction() == MotionEvent.ACTION_MOVE) {
@@ -435,7 +470,7 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 		}
 
 		/* Set the renderer responsible for frame rendering */
-		setRenderer(new Renderer());
+		setRenderer(godotRenderer);
 	}
 
 	private static final int _EGL_CONTEXT_FLAGS_KHR = 0x30FC;
@@ -706,7 +741,13 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 
 	private static class Renderer implements GLSurfaceView.Renderer {
 
+		private boolean activityJustResumed = false;
+
 		public void onDrawFrame(GL10 gl) {
+			if (activityJustResumed) {
+				GodotLib.onRendererResumed();
+				activityJustResumed = false;
+			}
 			GodotLib.step();
 			for (int i = 0; i < Godot.singleton_count; i++) {
 				Godot.singletons[i].onGLDrawFrame(gl);
@@ -723,6 +764,16 @@ public class GodotView extends GLSurfaceView implements InputDeviceListener {
 
 		public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 			GodotLib.newcontext(use_32);
+		}
+
+		void onActivityResumed() {
+			// We defer invoking GodotLib.onRendererResumed() until the first draw frame call.
+			// This ensures we have a valid GL context and surface when we do so.
+			activityJustResumed = true;
+		}
+	
+		void onActivityPaused() {
+			GodotLib.onRendererPaused();
 		}
 	}
 }
