@@ -87,6 +87,6 @@ int iphone_main(int width, int height, int argc, char **argv, String data_dir) {
 void iphone_finish() {
 
 	printf("iphone_finish\n");
-	Main::cleanup();
+	// Main::cleanup(); this is causing a crash at theme propagation of controls
 	// delete os; this is causing EXC_BAD_ACCESS in ObjectDB::remove_instance
 };
