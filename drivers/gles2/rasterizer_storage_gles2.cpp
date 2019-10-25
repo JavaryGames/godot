@@ -1271,6 +1271,7 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 			shaders.cubemap_filter.set_uniform(CubemapFilterShaderGLES2::Z_FLIP, false);
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 			glCopyTexSubImage2D(_cube_side_enum[i], lod, 0, 0, 0, 0, size, size);
 		}
@@ -2554,6 +2555,9 @@ void RasterizerStorageGLES2::mesh_surface_update_region(RID p_mesh, int p_surfac
 	PoolVector<uint8_t>::Read r = p_data.read();
 
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->surfaces[p_surface]->vertex_id);
+	#ifdef IPHONE_ENABLED
+		glBufferData(GL_ARRAY_BUFFER,  total_size, NULL, GL_DYNAMIC_DRAW);
+	#endif
 	glBufferSubData(GL_ARRAY_BUFFER, p_offset, total_size, r.ptr());
 	glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
 }
@@ -3687,6 +3691,9 @@ void RasterizerStorageGLES2::_update_skeleton_transform_buffer(const PoolVector<
 
 		glBufferData(GL_ARRAY_BUFFER, p_size * sizeof(float), p_data.read().ptr(), GL_DYNAMIC_DRAW);
 	} else {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  p_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, 0, p_size * sizeof(float), p_data.read().ptr());
 	}
 
@@ -5425,6 +5432,9 @@ void RasterizerStorageGLES2::canvas_light_occluder_set_polylines(RID p_occluder,
 		} else {
 
 			glBindBuffer(GL_ARRAY_BUFFER, co->vertex_id);
+			#ifdef IPHONE_ENABLED
+				glBufferData(GL_ARRAY_BUFFER,  lc * 6 * sizeof(real_t), NULL, GL_DYNAMIC_DRAW);
+			#endif
 			glBufferSubData(GL_ARRAY_BUFFER, 0, lc * 6 * sizeof(real_t), vw.ptr());
 		}
 
@@ -5438,6 +5448,9 @@ void RasterizerStorageGLES2::canvas_light_occluder_set_polylines(RID p_occluder,
 		} else {
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, co->index_id);
+			#ifdef IPHONE_ENABLED
+				glBufferData(GL_ELEMENT_ARRAY_BUFFER,  lc * 3 * sizeof(uint16_t), NULL, GL_DYNAMIC_DRAW);
+			#endif
 			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, lc * 3 * sizeof(uint16_t), iw.ptr());
 		}
 
@@ -6118,6 +6131,7 @@ void RasterizerStorageGLES2::finalize() {
 void RasterizerStorageGLES2::_copy_screen() {
 	bind_quad_array();
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void RasterizerStorageGLES2::update_dirty_resources() {
