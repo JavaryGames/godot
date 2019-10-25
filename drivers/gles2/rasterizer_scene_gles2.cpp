@@ -682,6 +682,7 @@ bool RasterizerSceneGLES2::reflection_probe_instance_postprocess_step(RID p_inst
 			storage->shaders.cubemap_filter.set_uniform(CubemapFilterShaderGLES2::Z_FLIP, false);
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			glCopyTexSubImage2D(_cube_side_enum[i], lod, 0, 0, 0, 0, size, size);
 		}
 
@@ -1794,6 +1795,9 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 
 				if (!c.normals.empty()) {
 					glEnableVertexAttribArray(VS::ARRAY_NORMAL);
+					#ifdef IPHONE_ENABLED
+						glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector3) * vertices, NULL, GL_DYNAMIC_DRAW);
+					#endif
 					glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Vector3) * vertices, c.normals.ptr());
 					glVertexAttribPointer(VS::ARRAY_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 					buf_ofs += sizeof(Vector3) * vertices;
@@ -1803,6 +1807,9 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 
 				if (!c.tangents.empty()) {
 					glEnableVertexAttribArray(VS::ARRAY_TANGENT);
+					#ifdef IPHONE_ENABLED
+						glBufferData(GL_ARRAY_BUFFER,  sizeof(Plane) * vertices, NULL, GL_DYNAMIC_DRAW);
+					#endif
 					glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Plane) * vertices, c.tangents.ptr());
 					glVertexAttribPointer(VS::ARRAY_TANGENT, 4, GL_FLOAT, GL_FALSE, sizeof(Plane), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 					buf_ofs += sizeof(Plane) * vertices;
@@ -1812,6 +1819,9 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 
 				if (!c.colors.empty()) {
 					glEnableVertexAttribArray(VS::ARRAY_COLOR);
+					#ifdef IPHONE_ENABLED
+						glBufferData(GL_ARRAY_BUFFER,  sizeof(Color) * vertices, NULL, GL_DYNAMIC_DRAW);
+					#endif
 					glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Color) * vertices, c.colors.ptr());
 					glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Color), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 					buf_ofs += sizeof(Color) * vertices;
@@ -1821,6 +1831,9 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 
 				if (!c.uvs.empty()) {
 					glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
+					#ifdef IPHONE_ENABLED
+						glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * vertices, NULL, GL_DYNAMIC_DRAW);
+					#endif
 					glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Vector2) * vertices, c.uvs.ptr());
 					glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 					buf_ofs += sizeof(Vector2) * vertices;
@@ -1830,6 +1843,9 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 
 				if (!c.uv2s.empty()) {
 					glEnableVertexAttribArray(VS::ARRAY_TEX_UV2);
+					#ifdef IPHONE_ENABLED
+						glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * vertices, NULL, GL_DYNAMIC_DRAW);
+					#endif
 					glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Vector2) * vertices, c.uv2s.ptr());
 					glVertexAttribPointer(VS::ARRAY_TEX_UV2, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 					buf_ofs += sizeof(Vector2) * vertices;
@@ -1838,10 +1854,14 @@ void RasterizerSceneGLES2::_render_geometry(RenderList::Element *p_element) {
 				}
 
 				glEnableVertexAttribArray(VS::ARRAY_VERTEX);
+				#ifdef IPHONE_ENABLED
+					glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector3) * vertices, NULL, GL_DYNAMIC_DRAW);
+				#endif
 				glBufferSubData(GL_ARRAY_BUFFER, buf_ofs, sizeof(Vector3) * vertices, c.vertices.ptr());
 				glVertexAttribPointer(VS::ARRAY_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), CAST_INT_TO_UCHAR_PTR(buf_ofs));
 
 				glDrawArrays(gl_primitive[c.primitive], 0, c.vertices.size());
+				glBindBuffer(GL_ARRAY_BUFFER, 0);
 			}
 
 			if (restore_tex) {
@@ -2704,6 +2724,9 @@ void RasterizerSceneGLES2::_draw_sky(RasterizerStorageGLES2::Sky *p_sky, const C
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, state.sky_verts);
+	#ifdef IPHONE_ENABLED
+		glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector3) * 8, NULL, GL_DYNAMIC_DRAW);
+	#endif
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * 8, vertices);
 
 	// bind sky vertex array....
