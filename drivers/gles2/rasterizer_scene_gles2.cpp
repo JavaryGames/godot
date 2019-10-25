@@ -2722,7 +2722,10 @@ void RasterizerSceneGLES2::_draw_sky(RasterizerStorageGLES2::Sky *p_sky, const C
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, state.sky_verts);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * 8, vertices, GL_DYNAMIC_DRAW);
+	#ifdef IPHONE_ENABLED
+		glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector3) * 8, NULL, GL_DYNAMIC_DRAW);
+	#endif
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector3) * 8, vertices);
 
 	// bind sky vertex array....
 	glVertexAttribPointer(VS::ARRAY_VERTEX, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3) * 2, 0);
