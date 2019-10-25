@@ -273,6 +273,12 @@ void RasterizerCanvasGLES2::_draw_polygon(const int *p_indices, int p_index_coun
 
 	uint32_t buffer_ofs = 0;
 
+	#ifdef IPHONE_ENABLED
+
+		glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+
+	#endif
+
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector2) * p_vertex_count, p_vertices);
 	glEnableVertexAttribArray(VS::ARRAY_VERTEX);
 	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), NULL);
@@ -286,30 +292,45 @@ void RasterizerCanvasGLES2::_draw_polygon(const int *p_indices, int p_index_coun
 		glDisableVertexAttribArray(VS::ARRAY_COLOR);
 		glVertexAttrib4f(VS::ARRAY_COLOR, 1, 1, 1, 1);
 	} else {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(Color) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(Color) * p_vertex_count, p_colors);
 		glEnableVertexAttribArray(VS::ARRAY_COLOR);
-		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Color), ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Color), CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 		buffer_ofs += sizeof(Color) * p_vertex_count;
 	}
 
 	if (p_uvs) {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(Vector2) * p_vertex_count, p_uvs);
 		glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
-		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 		buffer_ofs += sizeof(Vector2) * p_vertex_count;
 	} else {
 		glDisableVertexAttribArray(VS::ARRAY_TEX_UV);
 	}
 
 	if (p_weights && p_bones) {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(float) * 4 * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(float) * 4 * p_vertex_count, p_weights);
 		glEnableVertexAttribArray(VS::ARRAY_WEIGHTS);
-		glVertexAttribPointer(VS::ARRAY_WEIGHTS, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 4, ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_WEIGHTS, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 4, CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 		buffer_ofs += sizeof(float) * 4 * p_vertex_count;
+
+		#ifdef IPHONE_ENABLED
+
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(int) * 4 * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+
+		#endif
 
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(int) * 4 * p_vertex_count, p_bones);
 		glEnableVertexAttribArray(VS::ARRAY_BONES);
-		glVertexAttribPointer(VS::ARRAY_BONES, 4, GL_UNSIGNED_INT, GL_FALSE, sizeof(int) * 4, ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_BONES, 4, GL_UNSIGNED_INT, GL_FALSE, sizeof(int) * 4, CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 		buffer_ofs += sizeof(int) * 4 * p_vertex_count;
 
 	} else {
@@ -319,6 +340,9 @@ void RasterizerCanvasGLES2::_draw_polygon(const int *p_indices, int p_index_coun
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.polygon_index_buffer);
 	if (storage->config.support_32_bits_indices) { //should check for
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER,  sizeof(int) * p_index_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(int) * p_index_count, p_indices);
 		glDrawElements(GL_TRIANGLES, p_index_count, GL_UNSIGNED_INT, 0);
 	} else {
@@ -326,6 +350,9 @@ void RasterizerCanvasGLES2::_draw_polygon(const int *p_indices, int p_index_coun
 		for (int i = 0; i < p_index_count; i++) {
 			index16[i] = uint16_t(p_indices[i]);
 		}
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER,  sizeof(uint16_t) * p_index_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(uint16_t) * p_index_count, index16);
 		glDrawElements(GL_TRIANGLES, p_index_count, GL_UNSIGNED_SHORT, 0);
 	}
@@ -340,9 +367,15 @@ void RasterizerCanvasGLES2::_draw_generic(GLuint p_primitive, int p_vertex_count
 
 	uint32_t buffer_ofs = 0;
 
+	#ifdef IPHONE_ENABLED
+
+		glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+
+	#endif
+
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vector2) * p_vertex_count, p_vertices);
 	glEnableVertexAttribArray(VS::ARRAY_VERTEX);
-	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), (uint8_t *)0);
+	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), NULL);
 	buffer_ofs += sizeof(Vector2) * p_vertex_count;
 
 	if (p_singlecolor) {
@@ -353,16 +386,22 @@ void RasterizerCanvasGLES2::_draw_generic(GLuint p_primitive, int p_vertex_count
 		glDisableVertexAttribArray(VS::ARRAY_COLOR);
 		glVertexAttrib4f(VS::ARRAY_COLOR, 1, 1, 1, 1);
 	} else {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(Color) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(Color) * p_vertex_count, p_colors);
 		glEnableVertexAttribArray(VS::ARRAY_COLOR);
-		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Color), ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, sizeof(Color), CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 		buffer_ofs += sizeof(Color) * p_vertex_count;
 	}
 
 	if (p_uvs) {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  sizeof(Vector2) * p_vertex_count, NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, buffer_ofs, sizeof(Vector2) * p_vertex_count, p_uvs);
 		glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
-		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), ((uint8_t *)0) + buffer_ofs);
+		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), CAST_INT_TO_UCHAR_PTR(buffer_ofs));
 	} else {
 		glDisableVertexAttribArray(VS::ARRAY_TEX_UV);
 	}
@@ -414,17 +453,20 @@ void RasterizerCanvasGLES2::_draw_gui_primitive(int p_points, const Vector2 *p_v
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, data.polygon_buffer);
+	#ifdef IPHONE_ENABLED
+		glBufferData(GL_ARRAY_BUFFER,  p_points * stride * 4 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+	#endif
 	glBufferSubData(GL_ARRAY_BUFFER, 0, p_points * stride * 4 * sizeof(float), buffer_data);
 
 	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), NULL);
 
 	if (p_colors) {
-		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, stride * sizeof(float), (uint8_t *)0 + color_offset * sizeof(float));
+		glVertexAttribPointer(VS::ARRAY_COLOR, 4, GL_FLOAT, GL_FALSE, stride * sizeof(float), CAST_INT_TO_UCHAR_PTR(color_offset * sizeof(float)));
 		glEnableVertexAttribArray(VS::ARRAY_COLOR);
 	}
 
 	if (p_uvs) {
-		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (uint8_t *)0 + uv_offset * sizeof(float));
+		glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), CAST_INT_TO_UCHAR_PTR(uv_offset * sizeof(float)));
 		glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
 	}
 
@@ -629,6 +671,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 						state.canvas_shader.set_uniform(CanvasShaderGLES2::SRC_RECT, Color(0, 0, 1, 1));
 
 						glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+						glBindBuffer(GL_ARRAY_BUFFER, 0);
 					} else {
 
 						bool untile = false;
@@ -671,6 +714,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 						state.canvas_shader.set_uniform(CanvasShaderGLES2::SRC_RECT, Color(src_rect.position.x, src_rect.position.y, src_rect.size.x, src_rect.size.y));
 
 						glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+						glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 						if (untile) {
 							glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -832,6 +876,9 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				}
 
 				glBindBuffer(GL_ARRAY_BUFFER, data.ninepatch_vertices);
+				#ifdef IPHONE_ENABLED
+					glBufferData(GL_ARRAY_BUFFER,  sizeof(float) * (16 + 16) * 2, NULL, GL_DYNAMIC_DRAW);
+				#endif
 				glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * (16 + 16) * 2, buffer);
 
 				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.ninepatch_elements);
@@ -840,7 +887,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 				glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
 
 				glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), NULL);
-				glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (uint8_t *)0 + (sizeof(float) * 2));
+				glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), CAST_INT_TO_UCHAR_PTR((sizeof(float) * 2)));
 
 				glDrawElements(GL_TRIANGLES, 18 * 3 - (np->draw_center ? 0 : 6), GL_UNSIGNED_BYTE, NULL);
 
@@ -932,7 +979,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 						for (int k = 0; k < VS::ARRAY_MAX - 1; k++) {
 							if (s->attribs[k].enabled) {
 								glEnableVertexAttribArray(k);
-								glVertexAttribPointer(s->attribs[k].index, s->attribs[k].size, s->attribs[k].type, s->attribs[k].normalized, s->attribs[k].stride, (uint8_t *)0 + s->attribs[k].offset);
+								glVertexAttribPointer(s->attribs[k].index, s->attribs[k].size, s->attribs[k].type, s->attribs[k].normalized, s->attribs[k].stride, CAST_INT_TO_UCHAR_PTR(s->attribs[k].offset));
 							} else {
 								glDisableVertexAttribArray(k);
 								switch (k) {
@@ -952,6 +999,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 							glDrawElements(gl_primitive[s->primitive], s->index_array_len, (s->array_len >= (1 << 16)) ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, 0);
 						} else {
 							glDrawArrays(gl_primitive[s->primitive], 0, s->array_len);
+							glBindBuffer(GL_ARRAY_BUFFER, 0);
 						}
 					}
 
@@ -1021,7 +1069,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 					for (int k = 0; k < VS::ARRAY_MAX - 1; k++) {
 						if (s->attribs[k].enabled) {
 							glEnableVertexAttribArray(k);
-							glVertexAttribPointer(s->attribs[k].index, s->attribs[k].size, s->attribs[k].type, s->attribs[k].normalized, s->attribs[k].stride, (uint8_t *)0 + s->attribs[k].offset);
+							glVertexAttribPointer(s->attribs[k].index, s->attribs[k].size, s->attribs[k].type, s->attribs[k].normalized, s->attribs[k].stride, CAST_INT_TO_UCHAR_PTR(s->attribs[k].offset));
 						} else {
 							glDisableVertexAttribArray(k);
 							switch (k) {
@@ -1073,6 +1121,7 @@ void RasterizerCanvasGLES2::_canvas_item_render_commands(Item *p_item, Item *cur
 							glDrawElements(gl_primitive[s->primitive], s->index_array_len, (s->array_len >= (1 << 16)) ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, 0);
 						} else {
 							glDrawArrays(gl_primitive[s->primitive], 0, s->array_len);
+							glBindBuffer(GL_ARRAY_BUFFER, 0);
 						}
 					}
 				}
@@ -1807,6 +1856,7 @@ void RasterizerCanvasGLES2::draw_generic_textured_rect(const Rect2 &p_rect, cons
 	state.canvas_shader.set_uniform(CanvasShaderGLES2::SRC_RECT, Color(p_src.position.x, p_src.position.y, p_src.size.x, p_src.size.y));
 
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void RasterizerCanvasGLES2::draw_lens_distortion_rect(const Rect2 &p_rect, float p_k1, float p_k2, const Vector2 &p_eye_center, float p_oversample) {
@@ -1837,6 +1887,7 @@ void RasterizerCanvasGLES2::draw_lens_distortion_rect(const Rect2 &p_rect, float
 
 	// and draw
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// and cleanup
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

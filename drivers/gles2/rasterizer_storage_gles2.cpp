@@ -84,7 +84,7 @@ GLuint RasterizerStorageGLES2::system_fbo = 0;
 void RasterizerStorageGLES2::bind_quad_array() const {
 	glBindBuffer(GL_ARRAY_BUFFER, resources.quadie);
 	glVertexAttribPointer(VS::ARRAY_VERTEX, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
-	glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, ((uint8_t *)NULL) + 8);
+	glVertexAttribPointer(VS::ARRAY_TEX_UV, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, CAST_INT_TO_UCHAR_PTR(8));
 
 	glEnableVertexAttribArray(VS::ARRAY_VERTEX);
 	glEnableVertexAttribArray(VS::ARRAY_TEX_UV);
@@ -1233,6 +1233,7 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 			shaders.cubemap_filter.set_uniform(CubemapFilterShaderGLES2::Z_FLIP, false);
 
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 			glCopyTexSubImage2D(_cube_side_enum[i], lod, 0, 0, 0, 0, size, size);
 		}
@@ -1557,6 +1558,10 @@ void RasterizerStorageGLES2::shader_get_param_list(RID p_shader, List<PropertyIn
 
 			case ShaderLanguage::TYPE_FLOAT: {
 				pi.type = Variant::REAL;
+				if (u.hint == ShaderLanguage::ShaderNode::Uniform::HINT_RANGE) {
+					pi.hint = PROPERTY_HINT_RANGE;
+					pi.hint_string = rtos(u.hint_range[0]) + "," + rtos(u.hint_range[1]) + "," + rtos(u.hint_range[2]);
+				}
 			} break;
 
 			case ShaderLanguage::TYPE_VEC2: {
@@ -2500,6 +2505,9 @@ void RasterizerStorageGLES2::mesh_surface_update_region(RID p_mesh, int p_surfac
 	PoolVector<uint8_t>::Read r = p_data.read();
 
 	glBindBuffer(GL_ARRAY_BUFFER, mesh->surfaces[p_surface]->vertex_id);
+	#ifdef IPHONE_ENABLED
+		glBufferData(GL_ARRAY_BUFFER,  total_size, NULL, GL_DYNAMIC_DRAW);
+	#endif
 	glBufferSubData(GL_ARRAY_BUFFER, p_offset, total_size, r.ptr());
 	glBindBuffer(GL_ARRAY_BUFFER, 0); //unbind
 }
@@ -3647,6 +3655,9 @@ void RasterizerStorageGLES2::_update_skeleton_transform_buffer(const PoolVector<
 
 		glBufferData(GL_ARRAY_BUFFER, p_size * sizeof(float), p_data.read().ptr(), GL_DYNAMIC_DRAW);
 	} else {
+		#ifdef IPHONE_ENABLED
+			glBufferData(GL_ARRAY_BUFFER,  p_size * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+		#endif
 		glBufferSubData(GL_ARRAY_BUFFER, 0, p_size * sizeof(float), p_data.read().ptr());
 	}
 
@@ -3737,7 +3748,8 @@ void RasterizerStorageGLES2::light_set_param(RID p_light, VS::LightParam p_param
 			light->version++;
 			light->instance_change_notify(true, false);
 		} break;
-		default: {}
+		default: {
+		}
 	}
 
 	light->param[p_param] = p_value;
@@ -4762,7 +4774,8 @@ void RasterizerStorageGLES2::render_target_set_flag(RID p_render_target, RenderT
 			_render_target_allocate(rt);
 
 		} break;
-		default: {}
+		default: {
+		}
 	}
 }
 
@@ -4927,6 +4940,9 @@ void RasterizerStorageGLES2::canvas_light_occluder_set_polylines(RID p_occluder,
 		} else {
 
 			glBindBuffer(GL_ARRAY_BUFFER, co->vertex_id);
+			#ifdef IPHONE_ENABLED
+				glBufferData(GL_ARRAY_BUFFER,  lc * 6 * sizeof(real_t), NULL, GL_DYNAMIC_DRAW);
+			#endif
 			glBufferSubData(GL_ARRAY_BUFFER, 0, lc * 6 * sizeof(real_t), vw.ptr());
 		}
 
@@ -4940,6 +4956,9 @@ void RasterizerStorageGLES2::canvas_light_occluder_set_polylines(RID p_occluder,
 		} else {
 
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, co->index_id);
+			#ifdef IPHONE_ENABLED
+				glBufferData(GL_ELEMENT_ARRAY_BUFFER,  lc * 3 * sizeof(uint16_t), NULL, GL_DYNAMIC_DRAW);
+			#endif
 			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, lc * 3 * sizeof(uint16_t), iw.ptr());
 		}
 
@@ -5208,18 +5227,72 @@ void RasterizerStorageGLES2::set_debug_generate_wireframes(bool p_generate) {
 }
 
 void RasterizerStorageGLES2::render_info_begin_capture() {
+
+	info.snap = info.render;
 }
 
 void RasterizerStorageGLES2::render_info_end_capture() {
+
+	info.snap.object_count = info.render.object_count - info.snap.object_count;
+	info.snap.draw_call_count = info.render.draw_call_count - info.snap.draw_call_count;
+	info.snap.material_switch_count = info.render.material_switch_count - info.snap.material_switch_count;
+	info.snap.surface_switch_count = info.render.surface_switch_count - info.snap.surface_switch_count;
+	info.snap.shader_rebind_count = info.render.shader_rebind_count - info.snap.shader_rebind_count;
+	info.snap.vertices_count = info.render.vertices_count - info.snap.vertices_count;
 }
 
 int RasterizerStorageGLES2::get_captured_render_info(VS::RenderInfo p_info) {
 
-	return get_render_info(p_info);
+	switch (p_info) {
+		case VS::INFO_OBJECTS_IN_FRAME: {
+			return info.snap.object_count;
+		} break;
+		case VS::INFO_VERTICES_IN_FRAME: {
+			return info.snap.vertices_count;
+		} break;
+		case VS::INFO_MATERIAL_CHANGES_IN_FRAME: {
+			return info.snap.material_switch_count;
+		} break;
+		case VS::INFO_SHADER_CHANGES_IN_FRAME: {
+			return info.snap.shader_rebind_count;
+		} break;
+		case VS::INFO_SURFACE_CHANGES_IN_FRAME: {
+			return info.snap.surface_switch_count;
+		} break;
+		case VS::INFO_DRAW_CALLS_IN_FRAME: {
+			return info.snap.draw_call_count;
+		} break;
+		default: {
+			return get_render_info(p_info);
+		}
+	}
 }
 
 int RasterizerStorageGLES2::get_render_info(VS::RenderInfo p_info) {
-	return 0;
+	switch (p_info) {
+		case VS::INFO_OBJECTS_IN_FRAME:
+			return info.render_final.object_count;
+		case VS::INFO_VERTICES_IN_FRAME:
+			return info.render_final.vertices_count;
+		case VS::INFO_MATERIAL_CHANGES_IN_FRAME:
+			return info.render_final.material_switch_count;
+		case VS::INFO_SHADER_CHANGES_IN_FRAME:
+			return info.render_final.shader_rebind_count;
+		case VS::INFO_SURFACE_CHANGES_IN_FRAME:
+			return info.render_final.surface_switch_count;
+		case VS::INFO_DRAW_CALLS_IN_FRAME:
+			return info.render_final.draw_call_count;
+		case VS::INFO_USAGE_VIDEO_MEM_TOTAL:
+			return 0; //no idea
+		case VS::INFO_VIDEO_MEM_USED:
+			return info.vertex_mem + info.texture_mem;
+		case VS::INFO_TEXTURE_MEM_USED:
+			return info.texture_mem;
+		case VS::INFO_VERTEX_MEM_USED:
+			return info.vertex_mem;
+		default:
+			return 0; //no idea either
+	}
 }
 
 void RasterizerStorageGLES2::initialize() {
@@ -5505,6 +5578,7 @@ void RasterizerStorageGLES2::finalize() {
 void RasterizerStorageGLES2::_copy_screen() {
 	bind_quad_array();
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void RasterizerStorageGLES2::update_dirty_resources() {
