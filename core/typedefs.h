@@ -329,6 +329,3 @@ struct _GlobalLock {
 #endif
 
 #endif // TYPEDEFS_H
-
-/** This is needed due to a strange OpenGL API that expects a pointer *  type for an argument that is actually an offset. */
-#define CAST_INT_TO_UCHAR_PTR(ptr) ((uint8_t *)(uintptr_t)(ptr))
