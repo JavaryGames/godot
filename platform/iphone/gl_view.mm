@@ -341,6 +341,7 @@ static void clear_touches() {
 	[self destroyFramebuffer];
 	[self createFramebuffer];
 	[self drawView];
+	// [self drawView];
 }
 
 - (BOOL)createFramebuffer {
@@ -466,7 +467,7 @@ static void clear_touches() {
 		[displayLink setPaused:YES];
 
 		// Process all input events
-		while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, TRUE) == kCFRunLoopRunHandledSource)
+		while (CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.01, TRUE) == kCFRunLoopRunHandledSource)
 			;
 
 		// We are good to go, resume the CADisplayLink
