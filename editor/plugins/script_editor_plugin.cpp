@@ -2094,7 +2094,7 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 			p_resource->get_class_name() != StringName("VisualScript") &&
 			bool(EditorSettings::get_singleton()->get("text_editor/external/use_external_editor"))) {
 
-		return open_script_in_external_editor()
+		return open_script_in_external_editor(p_resource, p_line, p_col);
 	}
 
 	for (int i = 0; i < tab_container->get_child_count(); i++) {
