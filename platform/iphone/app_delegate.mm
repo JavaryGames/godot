@@ -63,7 +63,14 @@ void _set_keep_screen_on(bool p_enabled) {
 };
 
 void _vibrate() {
-	AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+	// This produces a long vibration on all devices
+	// AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+	
+	// This produces a short vibration on iphone 7+
+	UINotificationFeedbackGenerator *generator = [[UINotificationFeedbackGenerator alloc] init];
+    [generator prepare];
+    [generator notificationOccurred:UINotificationFeedbackTypeSuccess];
+    generator = nil;
 };
 
 @implementation AppDelegate
