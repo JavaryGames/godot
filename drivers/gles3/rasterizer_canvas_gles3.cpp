@@ -327,8 +327,9 @@ void RasterizerCanvasGLES3::_draw_polygon(const int *p_indices, int p_index_coun
 	glBindBuffer(GL_ARRAY_BUFFER, data.polygon_buffer);
 
 #ifndef GLES_OVER_GL
-	// Orphan the buffer to avoid CPU/GPU sync points caused by glBufferSubData
+	// Orphan the buffers to avoid CPU/GPU sync points caused by glBufferSubData
 	glBufferData(GL_ARRAY_BUFFER, data.polygon_buffer_size, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.polygon_index_buffer_size, NULL, GL_DYNAMIC_DRAW);
 #endif
 
 	uint32_t buffer_ofs = 0;
@@ -427,8 +428,9 @@ void RasterizerCanvasGLES3::_draw_generic(GLuint p_primitive, int p_vertex_count
 	glBindBuffer(GL_ARRAY_BUFFER, data.polygon_buffer);
 
 #ifndef GLES_OVER_GL
-	// Orphan the buffer to avoid CPU/GPU sync points caused by glBufferSubData
+	// Orphan the buffers to avoid CPU/GPU sync points caused by glBufferSubData
 	glBufferData(GL_ARRAY_BUFFER, data.polygon_buffer_size, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.polygon_index_buffer_size, NULL, GL_DYNAMIC_DRAW);
 #endif
 
 	uint32_t buffer_ofs = 0;
