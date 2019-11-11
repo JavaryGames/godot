@@ -47,6 +47,7 @@ class Main {
 	static uint32_t frames;
 	static uint32_t frame;
 	static bool force_redraw_requested;
+	static bool disable_render_loop;
 	static int iterating;
 
 public:
@@ -58,6 +59,8 @@ public:
 
 	static bool iteration();
 	static void force_redraw();
+	static void disable_render();
+	static void enable_render();
 
 	static bool is_iterating();
 
