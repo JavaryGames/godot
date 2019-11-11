@@ -143,7 +143,6 @@ static bool debug_control_areas = false;
 static bool debug_control_names = false;
 #endif
 static int frame_delay = 0;
-static bool disable_render_loop = false;
 static int fixed_fps = -1;
 static bool print_fps = false;
 
@@ -1812,6 +1811,7 @@ uint64_t Main::target_ticks = 0;
 uint32_t Main::frames = 0;
 uint32_t Main::frame = 0;
 bool Main::force_redraw_requested = false;
+bool Main::disable_render_loop = false;
 int Main::iterating = 0;
 bool Main::is_iterating() {
 	return iterating > 0;
@@ -1992,6 +1992,14 @@ bool Main::iteration() {
 
 void Main::force_redraw() {
 	force_redraw_requested = true;
+}
+
+void Main::disable_render() {
+	disable_render_loop = true;
+}
+
+void Main::enable_render() {
+	disable_render_loop = false;
 }
 
 /* Engine deinitialization
