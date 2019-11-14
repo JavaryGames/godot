@@ -65,4 +65,8 @@ String iOS::get_rate_url(int p_app_id) const {
 	return ret;
 };
 
+float iOS::get_version() {
+	return [[[UIDevice currentDevice] systemVersion] floatValue];
+}
+
 iOS::iOS(){};

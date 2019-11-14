@@ -149,6 +149,7 @@ public:
 	virtual void set_window_title(const String &p_title);
 
 	virtual void alert(const String &p_alert, const String &p_title = "ALERT!");
+	virtual float get_version();
 
 	virtual Error open_dynamic_library(const String p_path, void *&p_library_handle, bool p_also_set_library_path = false);
 	virtual Error close_dynamic_library(void *p_library_handle);
