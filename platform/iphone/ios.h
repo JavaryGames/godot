@@ -44,8 +44,6 @@ public:
 
 	String get_rate_url(int p_app_id) const;
 
-	float get_version();
-
 	iOS();
 };
 
