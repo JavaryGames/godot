@@ -67,9 +67,9 @@ void _vibrate() {
 	// AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
 	
 	// This produces a short vibration on iphone 7+
-	UINotificationFeedbackGenerator *generator = [[UINotificationFeedbackGenerator alloc] init];
+	UISelectionFeedbackGenerator *generator = [[UISelectionFeedbackGenerator alloc] init];
     [generator prepare];
-    [generator notificationOccurred:UINotificationFeedbackTypeSuccess];
+    [generator selectionChanged];
     generator = nil;
 };
 
