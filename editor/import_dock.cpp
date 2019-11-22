@@ -207,9 +207,7 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 
 	clear();
 
-	bool force_save_status = false;
-
-	//use the value that is repeated the mot
+	// Use the value that is repeated the most.
 	Map<String, Dictionary> value_frequency;
 
 	for (int i = 0; i < p_paths.size(); i++) {
