@@ -218,7 +218,7 @@ void Control::_draw_debug_area() {
 			break;
 		}
 		default: {
-			ERR_EXPLAIN("Invalid mouse filter");
+			// ERR_EXPLAIN("Invalid mouse filter");
 			ERR_FAIL();
 		}
 	}

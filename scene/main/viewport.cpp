@@ -2405,6 +2405,8 @@ void Viewport::_gui_input_event(Ref<InputEvent> p_event) {
 		if (from && p_event->is_pressed()) {
 			Control *next = NULL;
 
+			Input *input = Input::get_singleton();
+
 			if (!mods && p_event->is_action_pressed("ui_focus_next")) {
 
 				next = from->find_next_valid_focus();
