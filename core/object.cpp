@@ -1563,20 +1563,14 @@ void Object::_set_bind(const String &p_set, const Variant &p_value) {
 
 	bool valid = false;
 	set(p_set, p_value, &valid);
-	if (!valid) {
-		// ERR_EXPLAIN("Cannot set property \"" + p_set + "\" in an instance of " + get_class_name());
-		ERR_FAIL();
-	}
+	ERR_FAIL_COND_MSG(!valid, "Cannot set property \"" + p_set + "\" in an instance of " + get_class_name());
 }
 
 Variant Object::_get_bind(const String &p_name) const {
 
 	bool valid = false;
 	Variant result = get(p_name, &valid);
-	if (!valid) {
-		// ERR_EXPLAIN("Cannot get property \"" + p_name + "\" in an instance of " + get_class_name());
-		ERR_FAIL_V(Variant());
-	}
+	ERR_FAIL_COND_V_MSG(!valid, Variant(), "Cannot get property \"" + p_name + "\" in an instance of " + get_class_name());
 	return result;
 }
 
