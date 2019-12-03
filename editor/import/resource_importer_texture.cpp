@@ -80,59 +80,59 @@ void ResourceImporterTexture::_texture_reimport_normal(const Ref<StreamTexture> 
 
 void ResourceImporterTexture::update_imports() {
 
-	if (EditorFileSystem::get_singleton()->is_scanning() || EditorFileSystem::get_singleton()->is_importing()) {
-		return; // do nothing for now
-	}
-	mutex->lock();
+	// if (EditorFileSystem::get_singleton()->is_scanning() || EditorFileSystem::get_singleton()->is_importing()) {
+	// 	return; // do nothing for now
+	// }
+	// mutex->lock();
 
-	if (make_flags.empty()) {
-		mutex->unlock();
-		return;
-	}
+	// if (make_flags.empty()) {
+	// 	mutex->unlock();
+	// 	return;
+	// }
 
-	Vector<String> to_reimport;
-	for (Map<StringName, int>::Element *E = make_flags.front(); E; E = E->next()) {
+	// Vector<String> to_reimport;
+	// for (Map<StringName, int>::Element *E = make_flags.front(); E; E = E->next()) {
 
-		Ref<ConfigFile> cf;
-		cf.instance();
-		String src_path = String(E->key()) + ".import";
+	// 	Ref<ConfigFile> cf;
+	// 	cf.instance();
+	// 	String src_path = String(E->key()) + ".import";
 
-		Error err = cf->load(src_path);
-		ERR_CONTINUE(err != OK);
+	// 	Error err = cf->load(src_path);
+	// 	ERR_CONTINUE(err != OK);
 
-		bool changed = false;
-		if (E->get() & MAKE_SRGB_FLAG && int(cf->get_value("params", "flags/srgb")) == 2) {
-			cf->set_value("params", "flags/srgb", 1);
-			changed = true;
-		}
+	// 	bool changed = false;
+	// 	if (E->get() & MAKE_SRGB_FLAG && int(cf->get_value("params", "flags/srgb")) == 2) {
+	// 		cf->set_value("params", "flags/srgb", 1);
+	// 		changed = true;
+	// 	}
 
-		if (E->get() & MAKE_NORMAL_FLAG && int(cf->get_value("params", "compress/normal_map")) == 0) {
-			cf->set_value("params", "compress/normal_map", 1);
-			changed = true;
-		}
+	// 	if (E->get() & MAKE_NORMAL_FLAG && int(cf->get_value("params", "compress/normal_map")) == 0) {
+	// 		cf->set_value("params", "compress/normal_map", 1);
+	// 		changed = true;
+	// 	}
 
-		if (E->get() & MAKE_3D_FLAG && bool(cf->get_value("params", "detect_3d"))) {
-			cf->set_value("params", "detect_3d", false);
-			cf->set_value("params", "compress/mode", 2);
-			cf->set_value("params", "flags/repeat", true);
-			cf->set_value("params", "flags/filter", true);
-			cf->set_value("params", "flags/mipmaps", true);
-			changed = true;
-		}
+	// 	if (E->get() & MAKE_3D_FLAG && bool(cf->get_value("params", "detect_3d"))) {
+	// 		cf->set_value("params", "detect_3d", false);
+	// 		cf->set_value("params", "compress/mode", 2);
+	// 		cf->set_value("params", "flags/repeat", true);
+	// 		cf->set_value("params", "flags/filter", true);
+	// 		cf->set_value("params", "flags/mipmaps", true);
+	// 		changed = true;
+	// 	}
 
-		if (changed) {
-			cf->save(src_path);
-			to_reimport.push_back(E->key());
-		}
-	}
+	// 	if (changed) {
+	// 		cf->save(src_path);
+	// 		to_reimport.push_back(E->key());
+	// 	}
+	// }
 
-	make_flags.clear();
+	// make_flags.clear();
 
-	mutex->unlock();
+	// mutex->unlock();
 
-	if (to_reimport.size()) {
-		EditorFileSystem::get_singleton()->reimport_files(to_reimport);
-	}
+	// if (to_reimport.size()) {
+	// 	EditorFileSystem::get_singleton()->reimport_files(to_reimport);
+	// }
 }
 
 String ResourceImporterTexture::get_importer_name() const {
