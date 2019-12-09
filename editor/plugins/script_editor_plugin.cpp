@@ -2010,6 +2010,60 @@ Error ScriptEditor::_save_text_file(Ref<TextFile> p_text_file, const String &p_p
 	return OK;
 }
 
+bool ScriptEditor::open_current_script_in_external_editor(int line, int column) {
+	return open_script_in_external_editor(_get_current_script(), line, column);
+}
+
+bool ScriptEditor::open_script_in_external_editor(const RES &p_resource, int p_line, int p_col) {
+	String path = EditorSettings::get_singleton()->get("text_editor/external/exec_path");
+	String flags = EditorSettings::get_singleton()->get("text_editor/external/exec_flags");
+
+	List<String> args;
+
+	if (flags.size()) {
+		String project_path = ProjectSettings::get_singleton()->get_resource_path();
+		String script_path = ProjectSettings::get_singleton()->globalize_path(p_resource->get_path());
+
+		flags = flags.replacen("{line}", itos(p_line > 0 ? p_line : 0));
+		flags = flags.replacen("{col}", itos(p_col));
+		flags = flags.strip_edges().replace("\\\\", "\\");
+
+		int from = 0;
+		int num_chars = 0;
+		bool inside_quotes = false;
+
+		for (int i = 0; i < flags.size(); i++) {
+
+			if (flags[i] == '"' && (!i || flags[i - 1] != '\\')) {
+
+				if (!inside_quotes) {
+					from++;
+				}
+				inside_quotes = !inside_quotes;
+
+			} else if (flags[i] == '\0' || (!inside_quotes && flags[i] == ' ')) {
+
+				String arg = flags.substr(from, num_chars);
+
+				// do path replacement here, else there will be issues with spaces and quotes
+				arg = arg.replacen("{project}", project_path);
+				arg = arg.replacen("{file}", script_path);
+				args.push_back(arg);
+
+				from = i + 1;
+				num_chars = 0;
+			} else {
+				num_chars++;
+			}
+		}
+	}
+
+	Error err = OS::get_singleton()->execute(path, args, false);
+	if (err == OK)
+		return false;
+	WARN_PRINT("Couldn't open external text editor, using internal");
+}
+
 bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_grab_focus) {
 
 	if (p_resource.is_null())
@@ -2039,62 +2093,7 @@ bool ScriptEditor::edit(const RES &p_resource, int p_line, int p_col, bool p_gra
 			p_resource->get_class_name() != StringName("VisualScript") &&
 			bool(EditorSettings::get_singleton()->get("text_editor/external/use_external_editor"))) {
 
-		String path = EditorSettings::get_singleton()->get("text_editor/external/exec_path");
-		String flags = EditorSettings::get_singleton()->get("text_editor/external/exec_flags");
-
-		List<String> args;
-		bool has_file_flag = false;
-		String script_path = ProjectSettings::get_singleton()->globalize_path(p_resource->get_path());
-
-		if (flags.size()) {
-			String project_path = ProjectSettings::get_singleton()->get_resource_path();
-
-			flags = flags.replacen("{line}", itos(p_line > 0 ? p_line : 0));
-			flags = flags.replacen("{col}", itos(p_col));
-			flags = flags.strip_edges().replace("\\\\", "\\");
-
-			int from = 0;
-			int num_chars = 0;
-			bool inside_quotes = false;
-
-			for (int i = 0; i < flags.size(); i++) {
-
-				if (flags[i] == '"' && (!i || flags[i - 1] != '\\')) {
-
-					if (!inside_quotes) {
-						from++;
-					}
-					inside_quotes = !inside_quotes;
-
-				} else if (flags[i] == '\0' || (!inside_quotes && flags[i] == ' ')) {
-
-					String arg = flags.substr(from, num_chars);
-					if (arg.find("{file}") != -1) {
-						has_file_flag = true;
-					}
-
-					// do path replacement here, else there will be issues with spaces and quotes
-					arg = arg.replacen("{project}", project_path);
-					arg = arg.replacen("{file}", script_path);
-					args.push_back(arg);
-
-					from = i + 1;
-					num_chars = 0;
-				} else {
-					num_chars++;
-				}
-			}
-		}
-
-		// Default to passing script path if no {file} flag is specified.
-		if (!has_file_flag) {
-			args.push_back(script_path);
-		}
-
-		Error err = OS::get_singleton()->execute(path, args, false);
-		if (err == OK)
-			return false;
-		WARN_PRINT("Couldn't open external text editor, using internal");
+		return open_script_in_external_editor(p_resource, p_line, p_col);
 	}
 
 	for (int i = 0; i < tab_container->get_child_count(); i++) {
