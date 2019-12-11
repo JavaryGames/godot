@@ -40,6 +40,7 @@ android {
 	packagingOptions {
 		exclude 'META-INF/LICENSE'
 		exclude 'META-INF/NOTICE'
+		exclude 'META-INF/proguard/androidx-annotations.pro'
 		doNotStrip "*/arm64-v8a/*.so"
 		doNotStrip "*/armeabi-v7a/*.so"
 		doNotStrip "*/x86/*.so"
