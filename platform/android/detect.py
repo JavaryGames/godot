@@ -273,7 +273,8 @@ def configure(env):
             env.Append(LINKFLAGS=['-Wl,--exclude-libs,libgcc.a','-Wl,--exclude-libs,libatomic.a','-nostdlib++'])
         env.Append(LINKFLAGS=['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel'])
         env.Append(LIBPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/"])
-        env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libandroid_support.a"])
+        if os.path.exists(env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libandroid_support.a"):
+            env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libandroid_support.a"])
         env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libc++_shared.so"])
     else:
         env.Append(LINKFLAGS=['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel'])
