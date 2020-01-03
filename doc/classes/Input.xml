@@ -387,14 +387,8 @@
 				[b]Note:[/b] It needs VIBRATE permission for Android at export settings. iOS does not support duration.
 				Javary update: id stands for the system sound ID on iOS devices.
 				[codeblock]
-				# 1000: medium strong
-				# 1003: tiny weak
-				# 1007: short strong + medium strong
-				# 1017: lenghty strong
-				# 1106: medium strong 2 times
-				# 1107: short strong
-				# 1159: short strong 3 times
-				# 1160: tiny strong 2 times
+				# 1011: double vibration
+				# 4095: single vibration
 				[/codeblock]
 				See http://iphonedevwiki.net/index.php/AudioServices
 			</description>
