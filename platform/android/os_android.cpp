@@ -722,8 +722,8 @@ String OS_Android::get_joy_guid(int p_device) const {
 	return input->get_joy_guid_remapped(p_device);
 }
 
-void OS_Android::vibrate_handheld(int p_duration_ms) {
-	godot_java->vibrate(p_duration_ms);
+void OS_Android::vibrate_handheld(int p_duration_ms, int id = 0) {
+	godot_java->vibrate(p_duration_ms, id);
 }
 
 bool OS_Android::_check_internal_feature_support(const String &p_feature) {

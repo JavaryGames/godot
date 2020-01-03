@@ -472,8 +472,8 @@ void InputDefault::stop_joy_vibration(int p_device) {
 	joy_vibration[p_device] = vibration;
 }
 
-void InputDefault::vibrate_handheld(int p_duration_ms) {
-	OS::get_singleton()->vibrate_handheld(p_duration_ms);
+void InputDefault::vibrate_handheld(int p_duration_ms, int id) {
+	OS::get_singleton()->vibrate_handheld(p_duration_ms, id);
 }
 
 void InputDefault::set_gravity(const Vector3 &p_gravity) {

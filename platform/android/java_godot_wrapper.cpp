@@ -254,9 +254,9 @@ bool GodotJavaWrapper::is_activity_resumed() {
 	}
 }
 
-void GodotJavaWrapper::vibrate(int p_duration_ms) {
+void GodotJavaWrapper::vibrate(int p_duration_ms, int id) {
 	if (_vibrate) {
 		JNIEnv *env = ThreadAndroid::get_env();
-		env->CallVoidMethod(godot_instance, _vibrate, p_duration_ms);
+		env->CallVoidMethod(godot_instance, _vibrate, p_duration_ms, id);
 	}
 }

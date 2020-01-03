@@ -62,8 +62,8 @@ void _set_keep_screen_on(bool p_enabled) {
 	[[UIApplication sharedApplication] setIdleTimerDisabled:(BOOL)p_enabled];
 };
 
-void _vibrate() {
-	AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+void _vibrate(int id) {
+	AudioServicesPlaySystemSound(SystemSoundID(id));
 };
 
 @implementation AppDelegate

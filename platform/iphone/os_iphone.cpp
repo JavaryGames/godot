@@ -462,7 +462,7 @@ extern void _show_keyboard(String p_existing);
 extern void _hide_keyboard();
 extern Error _shell_open(String p_uri);
 extern void _set_keep_screen_on(bool p_enabled);
-extern void _vibrate();
+extern void _vibrate(int id);
 
 void OSIPhone::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect) {
 	_show_keyboard(p_existing_text);
@@ -587,9 +587,10 @@ void OSIPhone::native_video_stop() {
 		_stop_video();
 }
 
-void OSIPhone::vibrate_handheld(int p_duration_ms) {
+void OSIPhone::vibrate_handheld(int p_duration_ms, int id) {
 	// iOS does not support duration for vibration
-	_vibrate();
+	print("OSIPhone::vibrate_handheld %d", id);
+	_vibrate(id);
 }
 
 bool OSIPhone::_check_internal_feature_support(const String &p_feature) {

@@ -88,7 +88,7 @@ public:
 	void init_input_devices();
 	jobject get_surface();
 	bool is_activity_resumed();
-	void vibrate(int p_duration_ms);
+	void vibrate(int p_duration_ms, int id);
 	String get_input_fallback_mapping();
 };
 

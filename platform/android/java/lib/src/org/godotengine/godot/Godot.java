@@ -359,15 +359,15 @@ public abstract class Godot extends Activity implements SensorEventListener, IDo
 	 */
 	@SuppressLint("MissingPermission")
 	@Keep
-	private void vibrate(int durationMs) {
+	private void vibrate(int durationMs, int id) {
 		if (requestPermission("VIBRATE")) {
 			Vibrator v = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
 			if (v != null) {
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-					v.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE));
+					v.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE), id);
 				} else {
 					//deprecated in API 26
-					v.vibrate(durationMs);
+					v.vibrate(durationMs, id);
 				}
 			}
 		}
