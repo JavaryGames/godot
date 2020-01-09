@@ -665,7 +665,7 @@ def detect_darwin_sdk_path(platform, env):
             raise
 
 def get_compiler_version(env):
-    version = decode_utf8(subprocess.check_output([env['CXX'], '--version']).strip())
+    version = decode_utf8(subprocess.check_output([env['CC'], '--version']).strip())
     match = re.search('[0-9][0-9.]*', version)
     if match is not None:
         return match.group().split('.')

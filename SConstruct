@@ -349,7 +349,7 @@ if selected_platform in platform_list:
             print("-----------------------------------")
             print(version)
             print("-----------------------------------")
-            if version != None and version[0] > '7':
+            if version != None and version[0] >= '7':
                 shadow_local_warning = ['-Wshadow-local']
         if (env["warnings"] == 'extra'):
             env.Append(CCFLAGS=['-Wall', '-Wextra'] + all_plus_warnings + shadow_local_warning)
