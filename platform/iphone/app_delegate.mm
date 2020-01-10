@@ -155,7 +155,6 @@ void _ios_add_joystick(GCController *controller, AppDelegate *delegate) {
 static void on_focus_out(ViewController *view_controller, bool *is_focus_out) {
 	if (!*is_focus_out) {
 		*is_focus_out = true;
-		Main::disable_render();
 		if (OS::get_singleton()->get_main_loop())
 			OS::get_singleton()->get_main_loop()->notification(
 					MainLoop::NOTIFICATION_WM_FOCUS_OUT);
@@ -174,7 +173,6 @@ static void on_focus_out(ViewController *view_controller, bool *is_focus_out) {
 static void on_focus_in(ViewController *view_controller, bool *is_focus_out) {
 	if (*is_focus_out) {
 		*is_focus_out = false;
-		Main::enable_render();
 		if (OS::get_singleton()->get_main_loop())
 			OS::get_singleton()->get_main_loop()->notification(
 					MainLoop::NOTIFICATION_WM_FOCUS_IN);
