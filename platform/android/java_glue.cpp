@@ -623,6 +623,7 @@ static jmethodID _setKeepScreenOn = 0;
 static jmethodID _alertDialog = 0;
 static jmethodID _requestPermission = 0;
 static jmethodID _vibrate = 0;
+static jmethodID _getWindowInset = 0;
 
 static void _gfx_init_func(void *ud, bool gl2) {
 }
@@ -767,6 +768,19 @@ static int _get_vk_height() {
 	return virtual_keyboard_height;
 }
 
+static Rect2 _get_window_inset() {
+	if (_getWindowInset) {
+		JNIEnv *env = ThreadAndroid::get_env();
+		jintArray ret = (jintArray)env->CallObjectMethod(godot_io, _getWindowInset);
+		jint *inset_arr = env->GetIntArrayElements(ret, JNI_FALSE);
+		Rect2 inset_rect(inset_arr[0], inset_arr[1], inset_arr[2], inset_arr[3]);
+		env->ReleaseIntArrayElements(ret, inset_arr, JNI_ABORT);
+		return inset_rect;
+	} else {
+		return Rect2();
+	}
+}
+
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setVirtualKeyboardHeight(JNIEnv *env, jobject obj, jint p_height) {
 	virtual_keyboard_height = p_height;
 }
@@ -822,6 +836,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 			_isVideoPlaying = env->GetMethodID(c, "isVideoPlaying", "()Z");
 			_pauseVideo = env->GetMethodID(c, "pauseVideo", "()V");
 			_stopVideo = env->GetMethodID(c, "stopVideo", "()V");
+			_getWindowInset = env->GetMethodID(c, "getWindowInset", "()[I");
 		}
 
 		ThreadAndroid::make_default(jvm);
@@ -837,7 +852,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 		AudioDriverAndroid::setup(gob);
 	}
 
-	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion, _request_vibrate);
+	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion, _request_vibrate, _get_window_inset);
 
 	char wd[500];
 	getcwd(wd, 500);
