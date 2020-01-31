@@ -358,11 +358,8 @@ bool EditorFileSystem::_test_for_reimport(const String &p_path, bool p_only_impo
 	Error err;
 	FileAccess *f = FileAccess::open(p_path + ".import", FileAccess::READ, &err);
 
-	if (!f) {
-		f = FileAccess::open(ResourceFormatImporter::get_singleton()->get_import_base_path(p_path) + ".import", FileAccess::READ, &err);
-		if (!f) { //no import file, do reimport
-			return true;
-		}
+	if (!f) { //no import file, do reimport
+		return true;
 	}
 
 	VariantParser::StreamFile stream;
@@ -571,12 +568,7 @@ bool EditorFileSystem::_update_scan_actions() {
 					//must not reimport, all was good
 					//update modified times, to avoid reimport
 					ia.dir->files[idx]->modified_time = FileAccess::get_modified_time(full_path);
-					if (FileAccess::exists(full_path + ".import")) {
-						ia.dir->files[idx]->import_modified_time = FileAccess::get_modified_time(full_path + ".import");
-					} else {
-						String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(full_path);
-						ia.dir->files[idx]->import_modified_time = FileAccess::get_modified_time(base_path + ".import");
-					}
+					ia.dir->files[idx]->import_modified_time = FileAccess::get_modified_time(full_path + ".import");
 				}
 
 				fs_changed = true;
@@ -1719,23 +1711,12 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	Map<StringName, Variant> params;
 	String importer_name;
-	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_file);
-
-	String import_file;
 
 	if (FileAccess::exists(p_file + ".import")) {
-		import_file = p_file + ".import";
-	} else if (FileAccess::exists(base_path + ".import")) {
-		import_file = base_path + ".import";
-	} else {
-		late_added_files.insert(p_file); //imported files do not call update_file(), but just in case..
-	}
-
-	if (!import_file.empty()) {
 		//use existing
 		Ref<ConfigFile> cf;
 		cf.instance();
-		Error err = cf->load(import_file);
+		Error err = cf->load(p_file + ".import");
 		if (err == OK) {
 			if (cf->has_section("params")) {
 				List<String> sk;
@@ -1748,8 +1729,9 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 				importer_name = cf->get_value("remap", "importer");
 			}
 		}
+
 	} else {
-		import_file = base_path + ".import";
+		late_added_files.insert(p_file); //imported files do not call update_file(), but just in case..
 	}
 
 	Ref<ResourceImporter> importer;
@@ -1791,6 +1773,8 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 	}
 
 	//finally, perform import!!
+	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_file);
+
 	List<String> import_variants;
 	List<String> gen_files;
 	Variant metadata;
@@ -1802,8 +1786,13 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	//as import is complete, save the .import file
 
+	FileAccess *f = FileAccess::open(p_file + ".import", FileAccess::WRITE);
 	ERR_FAIL_COND_MSG(!f, "Cannot open file from path '" + p_file + ".import'.");
 
+	//write manually, as order matters ([remap] has to go first for performance).
+	f->store_line("[remap]");
+	f->store_line("");
+	f->store_line("importer=\"" + importer->get_importer_name() + "\"");
 	if (importer->get_resource_type() != "") {
 		f->store_line("type=\"" + importer->get_resource_type() + "\"");
 	}
@@ -1894,7 +1883,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 
 	//update modified times, to avoid reimport
 	fs->files[cpos]->modified_time = FileAccess::get_modified_time(p_file);
-	fs->files[cpos]->import_modified_time = FileAccess::get_modified_time(import_file);
+	fs->files[cpos]->import_modified_time = FileAccess::get_modified_time(p_file + ".import");
 	fs->files[cpos]->deps = _get_dependencies(p_file);
 	fs->files[cpos]->type = importer->get_resource_type();
 	fs->files[cpos]->import_valid = ResourceLoader::is_import_valid(p_file);
