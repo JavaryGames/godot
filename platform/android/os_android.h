@@ -196,7 +196,7 @@ public:
 	virtual Size2 get_window_size() const;
 	virtual Rect2 get_window_safe_area() const;
 
-	virtual String get_name() const;
+	virtual String get_name();
 	virtual MainLoop *get_main_loop() const;
 
 	virtual bool can_draw() const;

@@ -850,6 +850,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 			_stopVideo = env->GetMethodID(c, "stopVideo", "()V");
 			_getWindowInset = env->GetMethodID(c, "getWindowInset", "()[I");
 		}
+	}
 
 	ThreadAndroid::make_default(jvm);
 #ifdef USE_JAVA_FILE_ACCESS

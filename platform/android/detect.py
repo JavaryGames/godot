@@ -211,7 +211,7 @@ def configure(env):
     if env['tools']:
         env.Append(CXXFLAGS=['-frtti'])
     else:
-        env.Append(CXXFLAGS=['-fno-rtti', '-fno-exceptions'])
+        env.Append(CXXFLAGS=['-fno-rtti']) #, '-fno-exceptions'])
         # Don't use dynamic_cast, necessary with no-rtti.
         env.Append(CPPDEFINES=['NO_SAFE_CAST'])
 
@@ -265,7 +265,7 @@ def configure(env):
             env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libandroid_support.a"])
         env.Append(LINKFLAGS=['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel'])
         env.Append(LIBPATH=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/"])
-        env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libc++.so.28"])
+        env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] +"/sources/cxx-stl/llvm-libc++/libs/"+arch_subpath+"/libc++.so"])
     else:
         env.Append(LINKFLAGS=[env["ANDROID_NDK_ROOT"] + "/sources/cxx-stl/llvm-libc++/libs/" + arch_subpath + "/libandroid_support.a"])
     env.Append(LINKFLAGS=['-shared', '--sysroot=' + lib_sysroot, '-Wl,--warn-shared-textrel'])
