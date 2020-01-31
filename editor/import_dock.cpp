@@ -153,19 +153,11 @@ void ImportDock::_update_options(const Ref<ConfigFile> &p_config) {
 	params->checking = false;
 	params->checked.clear();
 
-	bool has_custom_defaults = ProjectSettings::get_singleton()->has_setting("importer_defaults/" + params->importer->get_importer_name());
-	Dictionary custom_defaults;
-	if (has_custom_defaults) {
-		custom_defaults = ProjectSettings::get_singleton()->get("importer_defaults/" + params->importer->get_importer_name());
-	}
-
 	for (List<ResourceImporter::ImportOption>::Element *E = options.front(); E; E = E->next()) {
 
 		params->properties.push_back(E->get().option);
 		if (p_config.is_valid() && p_config->has_section_key("params", E->get().option.name)) {
 			params->values[E->get().option.name] = p_config->get_value("params", E->get().option.name);
-		} else if (has_custom_defaults) {
-			params->values[E->get().option.name] = custom_defaults[E->get().option.name];
 		} else {
 			params->values[E->get().option.name] = E->get().default_value;
 		}
@@ -221,23 +213,21 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 			}
 		}
 
-		if (config->has_section("params")) {
-			List<String> keys;
-			config->get_section_keys("params", &keys);
+		List<String> keys;
+		config->get_section_keys("params", &keys);
 
-			for (List<String>::Element *E = keys.front(); E; E = E->next()) {
+		for (List<String>::Element *E = keys.front(); E; E = E->next()) {
 
-				if (!value_frequency.has(E->get())) {
-					value_frequency[E->get()] = Dictionary();
-				}
+			if (!value_frequency.has(E->get())) {
+				value_frequency[E->get()] = Dictionary();
+			}
 
-				Variant value = config->get_value("params", E->get());
+			Variant value = config->get_value("params", E->get());
 
-				if (value_frequency[E->get()].has(value)) {
-					value_frequency[E->get()][value] = int(value_frequency[E->get()][value]) + 1;
-				} else {
-					value_frequency[E->get()][value] = 1;
-				}
+			if (value_frequency[E->get()].has(value)) {
+				value_frequency[E->get()][value] = int(value_frequency[E->get()][value]) + 1;
+			} else {
+				value_frequency[E->get()][value] = 1;
 			}
 		}
 	}
@@ -251,12 +241,6 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 	params->values.clear();
 	params->checking = true;
 	params->checked.clear();
-
-	bool has_custom_defaults = ProjectSettings::get_singleton()->has_setting("importer_defaults/" + params->importer->get_importer_name());
-	Dictionary custom_defaults;
-	if (has_custom_defaults) {
-		custom_defaults = ProjectSettings::get_singleton()->get("importer_defaults/" + params->importer->get_importer_name());
-	}
 
 	for (List<ResourceImporter::ImportOption>::Element *E = options.front(); E; E = E->next()) {
 
@@ -277,8 +261,6 @@ void ImportDock::set_edit_multiple_paths(const Vector<String> &p_paths) {
 			}
 
 			params->values[E->get().option.name] = value;
-		} else if (has_custom_defaults) {
-			params->values[E->get().option.name] = custom_defaults[E->get().option.name];
 		} else {
 			params->values[E->get().option.name] = E->get().default_value;
 		}
@@ -471,12 +453,6 @@ void ImportDock::_reimport_and_restart() {
 
 void ImportDock::_reimport() {
 
-	bool has_custom_default = ProjectSettings::get_singleton()->has_setting("importer_defaults/" + params->importer->get_importer_name());
-	Dictionary custom_default;
-	if (has_custom_default) {
-		custom_default = ProjectSettings::get_singleton()->get("importer_defaults/" + params->importer->get_importer_name());
-	}
-
 	List<ResourceImporter::ImportOption> import_options;
 	List<StringName> non_default_options;
 	params->importer->get_import_options(&import_options);
@@ -484,7 +460,7 @@ void ImportDock::_reimport() {
 	for (List<ResourceImporter::ImportOption>::Element *E = import_options.front(); E; E = E->next()) {
 		String prop_name = E->get().option.name;
 		Variant value = params->values[prop_name];
-		if ((!has_custom_default && value != E->get().default_value) || (has_custom_default && value != custom_default[prop_name])) {
+		if (value != E->get().default_value) {
 			non_default_options.push_back(prop_name);
 		}
 	}
