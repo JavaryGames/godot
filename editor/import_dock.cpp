@@ -29,8 +29,6 @@
 /*************************************************************************/
 
 #include "import_dock.h"
-
-#include "core/os/dir_access.h"
 #include "editor_node.h"
 #include "editor_resource_preview.h"
 
@@ -453,18 +451,6 @@ void ImportDock::_reimport_and_restart() {
 
 void ImportDock::_reimport() {
 
-	List<ResourceImporter::ImportOption> import_options;
-	List<StringName> non_default_options;
-	params->importer->get_import_options(&import_options);
-
-	for (List<ResourceImporter::ImportOption>::Element *E = import_options.front(); E; E = E->next()) {
-		String prop_name = E->get().option.name;
-		Variant value = params->values[prop_name];
-		if (value != E->get().default_value) {
-			non_default_options.push_back(prop_name);
-		}
-	}
-
 	for (int i = 0; i < params->paths.size(); i++) {
 
 		Ref<ConfigFile> config;
@@ -508,25 +494,8 @@ void ImportDock::_reimport() {
 		} else {
 			config->set_value("remap", "group_file", Variant()); //clear group file if unused
 		}
-		
-		// Remove .import file from the current location, since it'll be recreated
-		DirAccess *da = DirAccess::create(DirAccess::ACCESS_RESOURCES);
-		da->remove(import_config_path);
 
-		config->set_value("remap", "importer", params->importer->get_importer_name());
-		config->erase_section("params");
-
-		for (List<StringName>::Element *E = non_default_options.front(); E; E = E->next()) {
-			config->set_value("params", E->get(), params->values[E->get()]);
-		}
-
-		String save_base_path;
-		if (non_default_options.size() == 0) {
-			save_base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(params->paths[i]);
-		} else {
-			save_base_path = params->paths[i];
-		}
-		config->save(save_base_path + ".import");
+		config->save(params->paths[i] + ".import");
 	}
 
 	EditorFileSystem::get_singleton()->reimport_files(params->paths);

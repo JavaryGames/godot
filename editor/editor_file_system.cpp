@@ -1722,13 +1722,11 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 	String base_path = ResourceFormatImporter::get_singleton()->get_import_base_path(p_file);
 
 	String import_file;
-	bool load_default = false;
 
 	if (FileAccess::exists(p_file + ".import")) {
 		import_file = p_file + ".import";
 	} else if (FileAccess::exists(base_path + ".import")) {
 		import_file = base_path + ".import";
-		load_default = true;
 	} else {
 		late_added_files.insert(p_file); //imported files do not call update_file(), but just in case..
 	}
@@ -1755,6 +1753,7 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 	}
 
 	Ref<ResourceImporter> importer;
+	bool load_default = false;
 	//find the importer
 	if (importer_name != "") {
 		importer = ResourceFormatImporter::get_singleton()->get_importer_by_name(importer_name);
@@ -1866,24 +1865,17 @@ void EditorFileSystem::_reimport_file(const String &p_file) {
 		f->store_line("dest_files=" + Variant(dp).get_construct_string() + "\n");
 	}
 
-	if (!load_default) {
+	f->store_line("[params]");
+	f->store_line("");
 
-		f->store_line("[params]");
-		f->store_line("");
+	//store options in provided order, to avoid file changing. Order is also important because first match is accepted first.
 
-		//store options in provided order, to avoid file changing. Order is also important because first match is accepted first.
+	for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
 
-		for (List<ResourceImporter::ImportOption>::Element *E = opts.front(); E; E = E->next()) {
-
-			String base = E->get().option.name;
-			if (params[base] == E->get().default_value) {
-				// Skip default values
-				continue;
-			}
-			String value;
-			VariantWriter::write_to_string(params[base], value);
-			f->store_line(base + "=" + value);
-		}
+		String base = E->get().option.name;
+		String value;
+		VariantWriter::write_to_string(params[base], value);
+		f->store_line(base + "=" + value);
 	}
 
 	f->close();
