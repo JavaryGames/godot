@@ -2402,18 +2402,13 @@ void FileSystemDock::_update_import_dock() {
 			break;
 		}
 
-		String import_path = fpath + ".import";
-		if (!FileAccess::exists(import_path)) {
-			// Try default file
-			import_path = ResourceFormatImporter::get_singleton()->get_import_base_path(fpath) + ".import";
-			if (!FileAccess::exists(import_path)) {
-				imports.clear();
-				break;
-			}
+		if (!FileAccess::exists(fpath + ".import")) {
+			imports.clear();
+			break;
 		}
 		Ref<ConfigFile> cf;
 		cf.instance();
-		Error err = cf->load(import_path);
+		Error err = cf->load(fpath + ".import");
 		if (err != OK) {
 			imports.clear();
 			break;
