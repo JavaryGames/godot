@@ -1771,9 +1771,9 @@ public:
 
 	void _update_custom_build_project() {
 
-		DirAccessRef da = DirAccess::open("res://android");
+		DirAccessRef da = DirAccess::open("res://../godot/modules/");
 
-		ERR_FAIL_COND_MSG(!da, "Cannot open directory 'res://android'.");
+		ERR_FAIL_COND_MSG(!da, "Cannot open directory 'res://../godot/modules/'.");
 		Map<String, List<String> > directory_paths;
 		Map<String, List<String> > manifest_sections;
 		Map<String, List<String> > gradle_sections;
@@ -1783,7 +1783,7 @@ public:
 
 			if (!d.begins_with(".") && d != "build" && da->current_is_dir()) { //a dir and not the build dir
 				//add directories found
-				DirAccessRef ds = DirAccess::open(String("res://android").plus_file(d));
+				DirAccessRef ds = DirAccess::open(String("res://../godot/modules/").plus_file(d));
 				if (ds) {
 					ds->list_dir_begin();
 					String sd = ds->get_next();
@@ -1805,7 +1805,7 @@ public:
 				}
 				//parse manifest
 				{
-					FileAccessRef f = FileAccess::open(String("res://android").plus_file(d).plus_file("AndroidManifest.conf"), FileAccess::READ);
+					FileAccessRef f = FileAccess::open(String("res://../godot/modules/").plus_file(d).plus_file("AndroidManifest.conf"), FileAccess::READ);
 					if (f) {
 
 						String section;
@@ -1828,7 +1828,7 @@ public:
 				}
 				//parse gradle
 				{
-					FileAccessRef f = FileAccess::open(String("res://android").plus_file(d).plus_file("gradle.conf"), FileAccess::READ);
+					FileAccessRef f = FileAccess::open(String("res://../godot/modules/").plus_file(d).plus_file("gradle.conf"), FileAccess::READ);
 					if (f) {
 
 						String section;
