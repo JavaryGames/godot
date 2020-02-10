@@ -1794,7 +1794,7 @@ public:
 							if (!directory_paths.has(key)) {
 								directory_paths[key] = List<String>();
 							}
-							String path = ProjectSettings::get_singleton()->get_resource_path().plus_file("android").plus_file(d).plus_file(sd);
+							String path = ProjectSettings::get_singleton()->get_resource_path().plus_file("../godot/modules/").plus_file(d).plus_file(sd);
 							directory_paths[key].push_back(path);
 							print_line("Add: " + sd + ":" + path);
 						}
