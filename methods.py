@@ -1,12 +1,16 @@
 import os
 import os.path
+import sys
 import re
 import glob
+import string
+import datetime
 import subprocess
 from compat import iteritems, isbasestring, decode_utf8
 
 
 def add_source_files(self, sources, files, warn_duplicates=True):
+
     # Convert string to list of absolute paths (including expanding wildcard)
     if isbasestring(files):
         # Keep SCons project-absolute path as they are (no wildcard support)
@@ -67,7 +71,8 @@ def update_version(module_version_string=""):
     f.write("#define VERSION_NAME \"" + str(version.name) + "\"\n")
     f.write("#define VERSION_MAJOR " + str(version.major) + "\n")
     f.write("#define VERSION_MINOR " + str(version.minor) + "\n")
-    f.write("#define VERSION_PATCH " + str(version.patch) + "\n")
+    if hasattr(version, 'patch'):
+        f.write("#define VERSION_PATCH " + str(version.patch) + "\n")
     f.write("#define VERSION_STATUS \"" + str(version.status) + "\"\n")
     f.write("#define VERSION_BUILD \"" + str(build_name) + "\"\n")
     f.write("#define VERSION_MODULE_CONFIG \"" + str(version.module_config) + module_version_string + "\"\n")
@@ -192,7 +197,7 @@ def win32_spawn(sh, escape, cmd, args, env):
             env[e] = str(env[e])
     proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, startupinfo=startupinfo, shell=False, env=env)
-    _, err = proc.communicate()
+    data, err = proc.communicate()
     rv = proc.wait()
     if rv:
         print("=====")
@@ -229,6 +234,74 @@ def win32_spawn(sh, escape, cmd, args, spawnenv):
 	return exit_code
 """
 
+def android_add_flat_dir(self, dir):
+    if (dir not in self.android_flat_dirs):
+        self.android_flat_dirs.append(dir)
+
+def android_add_maven_repository(self, url):
+    if (url not in self.android_maven_repos):
+        self.android_maven_repos.append(url)
+
+def android_add_dependency(self, depline):
+    if (depline not in self.android_dependencies):
+        self.android_dependencies.append(depline)
+
+def android_add_java_dir(self, subpath):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + subpath
+    if (base_path not in self.android_java_dirs):
+        self.android_java_dirs.append(base_path)
+
+def android_add_res_dir(self, subpath):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + subpath
+    if (base_path not in self.android_res_dirs):
+        self.android_res_dirs.append(base_path)
+
+def android_add_asset_dir(self, subpath):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + subpath
+    if (base_path not in self.android_asset_dirs):
+        self.android_asset_dirs.append(base_path)
+
+def android_add_aidl_dir(self, subpath):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + subpath
+    if (base_path not in self.android_aidl_dirs):
+        self.android_aidl_dirs.append(base_path)
+
+def android_add_jni_dir(self, subpath):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + subpath
+    if (base_path not in self.android_jni_dirs):
+        self.android_jni_dirs.append(base_path)
+
+def android_add_gradle_plugin(self, plugin):
+    if (plugin not in self.android_gradle_plugins):
+        self.android_gradle_plugins.append(plugin)
+
+def android_add_gradle_classpath(self, classpath):
+    if (classpath not in self.android_gradle_classpath):
+        self.android_gradle_classpath.append(classpath)
+
+def android_add_gradle_content(self, config):
+    if (config not in self.android_gradle_content):
+        self.android_gradle_content.append(config)
+
+def android_add_default_config(self, config):
+    if (config not in self.android_default_config):
+        self.android_default_config.append(config)
+
+def android_add_to_manifest(self, file):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + file
+    with open(base_path, "r") as f:
+        self.android_manifest_chunk += f.read()
+
+def android_add_to_permissions(self, file):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + file
+    with open(base_path, "r") as f:
+        self.android_permission_chunk += f.read()
+
+def android_add_to_attributes(self, file):
+    base_path = self.Dir(".").abspath + "/modules/" + self.current_module + "/" + file
+    with open(base_path, "r") as f:
+        self.android_appattributes_chunk += f.read()
+
 def disable_module(self):
     self.disabled_modules.append(self.current_module)
 
@@ -253,7 +326,7 @@ def use_windows_spawn_fix(self, platform=None):
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, startupinfo=startupinfo, shell=False, env=env)
-        _, err = proc.communicate()
+        data, err = proc.communicate()
         rv = proc.wait()
         if rv:
             print("=====")
@@ -304,7 +377,7 @@ def split_lib(self, libname, src_list = None, env_lib = None):
         else:
             fname = env.File(f)[0].path
         fname = fname.replace("\\", "/")
-        base = "/".join(fname.split("/")[:2])
+        base = string.join(fname.split("/")[:2], "/")
         if base != cur_base and len(list) > max_src:
             if num > 0:
                 lib = env_lib.add_library(libname + str(num), list)
@@ -316,6 +389,12 @@ def split_lib(self, libname, src_list = None, env_lib = None):
 
     lib = env_lib.add_library(libname + str(num), list)
     lib_list.append(lib)
+
+    if len(lib_list) > 0:
+        if os.name == 'posix' and sys.platform == 'msys':
+            env.Replace(ARFLAGS=['rcsT'])
+            lib = env_lib.add_library(libname + "_collated", lib_list)
+            lib_list = [lib]
 
     lib_base = []
     env_lib.add_source_files(lib_base, "*.cpp")
@@ -510,7 +589,7 @@ def find_visual_c_batch_file(env):
     from SCons.Tool.MSCommon.vc import get_default_version, get_host_target, find_batch_file
 
     version = get_default_version(env)
-    (host_platform, target_platform, _) = get_host_target(env)
+    (host_platform, target_platform,req_target_platform) = get_host_target(env)
     return find_batch_file(env, version, host_platform, target_platform)[0]
 
 def generate_cpp_hint_file(filename):
@@ -621,7 +700,7 @@ def detect_darwin_sdk_path(platform, env):
             sdk_path = decode_utf8(subprocess.check_output(['xcrun', '--sdk', sdk_name, '--show-sdk-path']).strip())
             if sdk_path:
                 env[var_name] = sdk_path
-        except (subprocess.CalledProcessError, OSError):
+        except (subprocess.CalledProcessError, OSError) as e:
             print("Failed to find SDK path while running xcrun --sdk {} --show-sdk-path.".format(sdk_name))
             raise
 
@@ -637,8 +716,10 @@ def get_compiler_version(env):
     else:
         return None
 
+
 def using_gcc(env):
     return 'gcc' in os.path.basename(env["CC"])
+
 
 def using_clang(env):
     return 'clang' in os.path.basename(env["CC"])
