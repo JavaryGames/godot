@@ -34,7 +34,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import com.android.vending.billing.IInAppBillingService;
+import com.android.vending.billing.GodotIInAppBillingService;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import org.json.JSONException;
@@ -43,7 +43,7 @@ import org.json.JSONObject;
 abstract public class ReleaseAllConsumablesTask {
 
 	private Context context;
-	private IInAppBillingService mService;
+	private GodotIInAppBillingService mService;
 
 	private static class ReleaseAllConsumablesAsyncTask extends AsyncTask<String, String, String> {
 
@@ -80,7 +80,7 @@ abstract public class ReleaseAllConsumablesTask {
 		}
 	}
 
-	public ReleaseAllConsumablesTask(IInAppBillingService mService, Context context) {
+	public ReleaseAllConsumablesTask(GodotIInAppBillingService mService, Context context) {
 		this.context = context;
 		this.mService = mService;
 	}

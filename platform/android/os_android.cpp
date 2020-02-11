@@ -793,7 +793,7 @@ bool OS_Android::_check_internal_feature_support(const String &p_feature) {
 	return false;
 }
 
-OS_Android::OS_Android(GFXInitFunc p_gfx_init_func, void *p_gfx_init_ud, OpenURIFunc p_open_uri_func, GetUserDataDirFunc p_get_user_data_dir_func, GetLocaleFunc p_get_locale_func, GetModelFunc p_get_model_func, GetScreenDPIFunc p_get_screen_dpi_func, ShowVirtualKeyboardFunc p_show_vk, HideVirtualKeyboardFunc p_hide_vk, VirtualKeyboardHeightFunc p_vk_height_func, SetScreenOrientationFunc p_screen_orient, GetUniqueIDFunc p_get_unique_id, GetSystemDirFunc p_get_sdir_func, GetGLVersionCodeFunc p_get_gl_version_func, VideoPlayFunc p_video_play_func, VideoIsPlayingFunc p_video_is_playing_func, VideoPauseFunc p_video_pause_func, VideoStopFunc p_video_stop_func, SetKeepScreenOnFunc p_set_keep_screen_on_func, AlertFunc p_alert_func, SetClipboardFunc p_set_clipboard_func, GetClipboardFunc p_get_clipboard_func, RequestPermissionFunc p_request_permission, bool p_use_apk_expansion, VibrateFunc p_vibrate_func, GetWindowInsetFunc p_get_window_inset_func ) {
+OS_Android::OS_Android(GodotJavaWrapper *p_godot_java, GodotIOJavaWrapper *p_godot_io_java, bool p_use_apk_expansion) {
 
 	use_apk_expansion = p_use_apk_expansion;
 	default_videomode.width = 800;
@@ -806,34 +806,8 @@ OS_Android::OS_Android(GFXInitFunc p_gfx_init_func, void *p_gfx_init_ud, OpenURI
 	//rasterizer = NULL;
 	use_gl2 = false;
 
-	open_uri_func = p_open_uri_func;
-	get_user_data_dir_func = p_get_user_data_dir_func;
-	get_locale_func = p_get_locale_func;
-	get_model_func = p_get_model_func;
-	get_screen_dpi_func = p_get_screen_dpi_func;
-	get_unique_id_func = p_get_unique_id;
-	get_system_dir_func = p_get_sdir_func;
-	get_gl_version_code_func = p_get_gl_version_func;
-	get_window_inset_func = p_get_window_inset_func;
-
-	video_play_func = p_video_play_func;
-	video_is_playing_func = p_video_is_playing_func;
-	video_pause_func = p_video_pause_func;
-	video_stop_func = p_video_stop_func;
-
-	show_virtual_keyboard_func = p_show_vk;
-	hide_virtual_keyboard_func = p_hide_vk;
-	get_virtual_keyboard_height_func = p_vk_height_func;
-
-	set_clipboard_func = p_set_clipboard_func;
-	get_clipboard_func = p_get_clipboard_func;
-
-	set_screen_orientation_func = p_screen_orient;
-	set_keep_screen_on_func = p_set_keep_screen_on_func;
-	alert_func = p_alert_func;
-	request_permission_func = p_request_permission;
-
-	vibrate_func = p_vibrate_func;
+	godot_java = p_godot_java;
+	godot_io_java = p_godot_io_java;
 
 	Vector<Logger *> loggers;
 	loggers.push_back(memnew(AndroidLogger));

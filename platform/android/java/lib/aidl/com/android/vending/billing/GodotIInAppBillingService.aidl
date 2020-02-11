@@ -43,7 +43,7 @@ import android.os.Bundle;
  * RESULT_ITEM_ALREADY_OWNED = 7 - Failure to purchase since item is already owned
  * RESULT_ITEM_NOT_OWNED = 8 - Failure to consume since item is not owned
  */
-interface IInAppBillingService {
+interface GodotIInAppBillingService {
     /**
      * Checks support for the requested billing API version, package and in-app type.
      * Minimum API version supported by this interface is 3.

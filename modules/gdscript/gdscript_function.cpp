@@ -443,6 +443,7 @@ Variant GDScriptFunction::call(GDScriptInstance *p_instance, const Variant **p_a
 			throw message.utf8().get_data();                                                            \
 		}                                                                                               \
 	}
+		
 
 #ifdef DEBUG_ENABLED
 	OPCODE_WHILE(ip < _code_size) {

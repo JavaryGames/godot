@@ -40,7 +40,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
-import com.android.vending.billing.IInAppBillingService;
+import com.android.vending.billing.GodotIInAppBillingService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.godotengine.godot.GodotPaymentV3;
@@ -54,7 +54,7 @@ public class PaymentsManager {
 	private static boolean auto_consume = true;
 
 	private Activity activity;
-	IInAppBillingService mService;
+	GodotIInAppBillingService mService;
 
 	public void setActivity(Activity activity) {
 		this.activity = activity;
@@ -98,7 +98,7 @@ public class PaymentsManager {
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			mService = IInAppBillingService.Stub.asInterface(service);
+			mService = GodotIInAppBillingService.Stub.asInterface(service);
 
 			// At this stage, godotPaymentV3 might not have been initialized yet.
 			if (godotPaymentV3 != null) {

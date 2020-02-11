@@ -33,13 +33,13 @@ package org.godotengine.godot.payments;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.RemoteException;
-import com.android.vending.billing.IInAppBillingService;
+import com.android.vending.billing.GodotIInAppBillingService;
 import java.lang.ref.WeakReference;
 
 abstract public class ConsumeTask {
 
 	private Context context;
-	private IInAppBillingService mService;
+	private GodotIInAppBillingService mService;
 
 	private String mSku;
 	private String mToken;
@@ -70,7 +70,7 @@ abstract public class ConsumeTask {
 		}
 	}
 
-	public ConsumeTask(IInAppBillingService mService, Context context) {
+	public ConsumeTask(GodotIInAppBillingService mService, Context context) {
 		this.context = context;
 		this.mService = mService;
 	}
