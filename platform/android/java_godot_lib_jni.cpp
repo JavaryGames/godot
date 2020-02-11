@@ -601,192 +601,11 @@ static Vector3 gravity;
 static Vector3 magnetometer;
 static Vector3 gyroscope;
 static HashMap<String, JNISingleton *> jni_singletons;
-static jobject godot_io;
-
-typedef void (*GFXInitFunc)(void *ud, bool gl2);
-
-static jmethodID _on_video_init = 0;
-static jmethodID _restart = 0;
-static jobject _godot_instance;
-
-static jmethodID _openURI = 0;
-static jmethodID _getDataDir = 0;
-static jmethodID _getLocale = 0;
-static jmethodID _getClipboard = 0;
-static jmethodID _setClipboard = 0;
-static jmethodID _getModel = 0;
-static jmethodID _getScreenDPI = 0;
-static jmethodID _showKeyboard = 0;
-static jmethodID _hideKeyboard = 0;
-static jmethodID _setScreenOrientation = 0;
-static jmethodID _getUniqueID = 0;
-static jmethodID _getSystemDir = 0;
-static jmethodID _getGLESVersionCode = 0;
-static jmethodID _playVideo = 0;
-static jmethodID _isVideoPlaying = 0;
-static jmethodID _pauseVideo = 0;
-static jmethodID _stopVideo = 0;
-static jmethodID _setKeepScreenOn = 0;
-static jmethodID _alertDialog = 0;
-static jmethodID _requestPermission = 0;
-static jmethodID _vibrate = 0;
-static jmethodID _getWindowInset = 0;
-
-static void _gfx_init_func(void *ud, bool gl2) {
-}
-
-static int _open_uri(const String &p_uri) {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring jStr = env->NewStringUTF(p_uri.utf8().get_data());
-	return env->CallIntMethod(godot_io, _openURI, jStr);
-}
-
-static String _get_user_data_dir() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(godot_io, _getDataDir);
-	return jstring_to_string(s, env);
-}
-
-static String _get_locale() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(godot_io, _getLocale);
-	return jstring_to_string(s, env);
-}
-
-static String _get_clipboard() {
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(_godot_instance, _getClipboard);
-	return jstring_to_string(s, env);
-}
-
-static void _set_clipboard(const String &p_text) {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring jStr = env->NewStringUTF(p_text.utf8().get_data());
-	env->CallVoidMethod(_godot_instance, _setClipboard, jStr);
-}
-
-static String _get_model() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(godot_io, _getModel);
-	return jstring_to_string(s, env);
-}
-
-static int _get_screen_dpi() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	return env->CallIntMethod(godot_io, _getScreenDPI);
-}
-
-static String _get_unique_id() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(godot_io, _getUniqueID);
-	return jstring_to_string(s, env);
-}
-
-static void _show_vk(const String &p_existing) {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring jStr = env->NewStringUTF(p_existing.utf8().get_data());
-	env->CallVoidMethod(godot_io, _showKeyboard, jStr);
-}
-
-static void _set_screen_orient(int p_orient) {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(godot_io, _setScreenOrientation, p_orient);
-}
-
-static String _get_system_dir(int p_dir) {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring s = (jstring)env->CallObjectMethod(godot_io, _getSystemDir, p_dir);
-	return jstring_to_string(s, env);
-}
-
-static int _get_gles_version_code() {
-	JNIEnv *env = ThreadAndroid::get_env();
-	return env->CallIntMethod(_godot_instance, _getGLESVersionCode);
-}
-
-static void _hide_vk() {
-
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(godot_io, _hideKeyboard);
-}
 
 // virtual Error native_video_play(String p_path);
 // virtual bool native_video_is_playing();
 // virtual void native_video_pause();
 // virtual void native_video_stop();
-
-static void _play_video(const String &p_path) {
-}
-
-static bool _is_video_playing() {
-	JNIEnv *env = ThreadAndroid::get_env();
-	return env->CallBooleanMethod(godot_io, _isVideoPlaying);
-	//return false;
-}
-
-static void _pause_video() {
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(godot_io, _pauseVideo);
-}
-
-static void _stop_video() {
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(godot_io, _stopVideo);
-}
-
-static void _set_keep_screen_on(bool p_enabled) {
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(_godot_instance, _setKeepScreenOn, p_enabled);
-}
-
-static void _alert(const String &p_message, const String &p_title) {
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring jStrMessage = env->NewStringUTF(p_message.utf8().get_data());
-	jstring jStrTitle = env->NewStringUTF(p_title.utf8().get_data());
-	env->CallVoidMethod(_godot_instance, _alertDialog, jStrMessage, jStrTitle);
-}
-
-static bool _request_permission(const String &p_name) {
-	JNIEnv *env = ThreadAndroid::get_env();
-	jstring jStrName = env->NewStringUTF(p_name.utf8().get_data());
-	return env->CallBooleanMethod(_godot_instance, _requestPermission, jStrName);
-}
-
-static void _request_vibrate(int duration_ms) {
-	JNIEnv *env = ThreadAndroid::get_env();
-	env->CallVoidMethod(_godot_instance, _vibrate, duration_ms);
-}
-
-// volatile because it can be changed from non-main thread and we need to
-// ensure the change is immediately visible to other threads.
-static volatile int virtual_keyboard_height;
-
-static int _get_vk_height() {
-	return virtual_keyboard_height;
-}
-
-static Rect2 _get_window_inset() {
-	if (_getWindowInset) {
-		JNIEnv *env = ThreadAndroid::get_env();
-		jintArray ret = (jintArray)env->CallObjectMethod(godot_io, _getWindowInset);
-		jint *inset_arr = env->GetIntArrayElements(ret, JNI_FALSE);
-		Rect2 inset_rect(inset_arr[0], inset_arr[1], inset_arr[2], inset_arr[3]);
-		env->ReleaseIntArrayElements(ret, inset_arr, JNI_ABORT);
-		return inset_rect;
-	} else {
-		return Rect2();
-	}
-}
 
 JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_setVirtualKeyboardHeight(JNIEnv *env, jobject obj, jint p_height) {
 	if (godot_io_java) {
@@ -804,53 +623,6 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 	// create our wrapper classes
 	godot_java = new GodotJavaWrapper(env, activity); // our activity is our godot instance is our activity..
 	godot_io_java = new GodotIOJavaWrapper(env, godot_java->get_member_object("io", "Lorg/godotengine/godot/GodotIO;", env));
-	_godot_instance = env->NewGlobalRef(activity);
-	//_godot_instance=activity;
-
-	{
-		//setup IO Object
-
-		jclass cls = env->FindClass("org/godotengine/godot/Godot");
-		if (cls) {
-
-			cls = (jclass)env->NewGlobalRef(cls);
-		}
-
-		jfieldID fid = env->GetStaticFieldID(cls, "io", "Lorg/godotengine/godot/GodotIO;");
-		jobject ob = env->GetStaticObjectField(cls, fid);
-		jobject gob = env->NewGlobalRef(ob);
-
-		godot_io = gob;
-
-		_on_video_init = env->GetMethodID(cls, "onVideoInit", "()V");
-		_restart = env->GetMethodID(cls, "restart", "()V");
-		_setKeepScreenOn = env->GetMethodID(cls, "setKeepScreenOn", "(Z)V");
-		_alertDialog = env->GetMethodID(cls, "alert", "(Ljava/lang/String;Ljava/lang/String;)V");
-		_getGLESVersionCode = env->GetMethodID(cls, "getGLESVersionCode", "()I");
-		_getClipboard = env->GetMethodID(cls, "getClipboard", "()Ljava/lang/String;");
-		_setClipboard = env->GetMethodID(cls, "setClipboard", "(Ljava/lang/String;)V");
-		_requestPermission = env->GetMethodID(cls, "requestPermission", "(Ljava/lang/String;)Z");
-		_vibrate = env->GetMethodID(cls, "vibrate", "(I)V");
-
-		if (cls) {
-			jclass c = env->GetObjectClass(gob);
-			_openURI = env->GetMethodID(c, "openURI", "(Ljava/lang/String;)I");
-			_getDataDir = env->GetMethodID(c, "getDataDir", "()Ljava/lang/String;");
-			_getLocale = env->GetMethodID(c, "getLocale", "()Ljava/lang/String;");
-			_getModel = env->GetMethodID(c, "getModel", "()Ljava/lang/String;");
-			_getScreenDPI = env->GetMethodID(c, "getScreenDPI", "()I");
-			_getUniqueID = env->GetMethodID(c, "getUniqueID", "()Ljava/lang/String;");
-			_showKeyboard = env->GetMethodID(c, "showKeyboard", "(Ljava/lang/String;)V");
-			_hideKeyboard = env->GetMethodID(c, "hideKeyboard", "()V");
-			_setScreenOrientation = env->GetMethodID(c, "setScreenOrientation", "(I)V");
-			_getSystemDir = env->GetMethodID(c, "getSystemDir", "(I)Ljava/lang/String;");
-			_playVideo = env->GetMethodID(c, "playVideo", "(Ljava/lang/String;)V");
-			_isVideoPlaying = env->GetMethodID(c, "isVideoPlaying", "()Z");
-			_pauseVideo = env->GetMethodID(c, "pauseVideo", "()V");
-			_stopVideo = env->GetMethodID(c, "stopVideo", "()V");
-			_getWindowInset = env->GetMethodID(c, "getWindowInset", "()[I");
-		}
-	}
 
 	ThreadAndroid::make_default(jvm);
 #ifdef USE_JAVA_FILE_ACCESS
@@ -866,7 +638,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 	AudioDriverAndroid::setup(godot_io_java->get_instance());
 	NetSocketAndroid::setup(godot_java->get_member_object("netUtils", "Lorg/godotengine/godot/utils/GodotNetUtils;", env));
 
-	os_android = new OS_Android(_gfx_init_func, env, _open_uri, _get_user_data_dir, _get_locale, _get_model, _get_screen_dpi, _show_vk, _hide_vk, _get_vk_height, _set_screen_orient, _get_unique_id, _get_system_dir, _get_gles_version_code, _play_video, _is_video_playing, _pause_video, _stop_video, _set_keep_screen_on, _alert, _set_clipboard, _get_clipboard, _request_permission, p_use_apk_expansion, _request_vibrate, _get_window_inset);
+	os_android = new OS_Android(godot_java, godot_io_java, p_use_apk_expansion);
 
 	char wd[500];
 	getcwd(wd, 500);

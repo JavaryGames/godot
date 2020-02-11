@@ -133,7 +133,7 @@ gradle_text = gradle_text.replace("$$GRADLE_PLUGINS$$", gradle_plugins)
 gradle_text = gradle_text.replace("$$GRADLE_CLASSPATH$$", gradle_classpath)
 gradle_text = gradle_text.replace("$$GRADLE_CONTENT$$", gradle_content)
 
-with open_utf8(abspath + "/java/app/build.gradle", "w") as gradle_baseout:
+with open_utf8(abspath + "/../../../project/android/build/build.gradle", "w") as gradle_baseout:
 	gradle_baseout.write(gradle_text)
 
 
@@ -144,7 +144,7 @@ manifest = manifest.replace("$$ADD_APPLICATION_CHUNKS$$", env.android_manifest_c
 manifest = manifest.replace("$$ADD_PERMISSION_CHUNKS$$", env.android_permission_chunk)
 manifest = manifest.replace("$$ADD_APPATTRIBUTE_CHUNKS$$", env.android_appattributes_chunk)
 
-with open_utf8(abspath + "/java/app/AndroidManifest.xml", "w") as pp_baseout:
+with open_utf8(abspath + "/../../../project/android/build/AndroidManifest.xml", "w") as pp_baseout:
 	pp_baseout.write(manifest)
 
 
