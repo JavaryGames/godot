@@ -15,7 +15,7 @@
 
 $$ADD_PERMISSION_CHUNKS$$
 
-    <application android:label="@string/godot_project_name_string" tools:ignore="GoogleAppIndexingWarning" android:icon="@drawable/icon">
+    <application android:label="@string/godot_project_name_string" tools:ignore="GoogleAppIndexingWarning" android:icon="@mipmap/icon">
 
       <!-- The following metadata values are replaced when Godot exports, modifying them here has no effect. -->
       <!-- Do these changes in the export preset. Adding new ones is fine. -->
@@ -51,7 +51,7 @@ $$ADD_APPLICATION_CHUNKS$$
 
     </application>
 
-    <instrumentation android:icon="@drawable/icon"
+    <instrumentation android:icon="@mipmap/icon"
                      android:label="@string/godot_project_name_string"
                      android:name="org.godotengine.godot.GodotInstrumentation"
                      android:targetPackage="com.godot.game" />

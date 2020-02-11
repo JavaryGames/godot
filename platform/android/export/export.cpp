@@ -1971,7 +1971,7 @@ public:
 							}
 
 						} else if (l.strip_edges().begins_with("<application")) {
-							String last_tag = "android:icon=\"@drawable/icon\"";
+							String last_tag = "android:icon=\"@mipmap/icon\"";
 							int last_tag_pos = l.find(last_tag);
 							if (last_tag_pos == -1) {
 								ERR_PRINTS("Not adding application attributes as the expected tag was not found in '<application': " + last_tag);
