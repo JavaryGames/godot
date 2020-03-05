@@ -37,14 +37,14 @@ import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.util.Log;
-import com.android.vending.billing.GodotIInAppBillingService;
+import com.android.vending.billing.IInAppBillingService;
 
 abstract public class PurchaseTask {
 
 	private Activity context;
 
-	private GodotIInAppBillingService mService;
-	public PurchaseTask(GodotIInAppBillingService mService, Activity context) {
+	private IInAppBillingService mService;
+	public PurchaseTask(IInAppBillingService mService, Activity context) {
 		this.context = context;
 		this.mService = mService;
 	}

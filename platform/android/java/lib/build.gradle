@@ -2,6 +2,7 @@ apply plugin: 'com.android.library'
 
 dependencies {
     implementation libraries.supportCoreUtils
+    compileOnly 'com.revenuecat.purchases:purchases:2.4.1'
 }
 
 def pathToRootDir = "../../../../"
