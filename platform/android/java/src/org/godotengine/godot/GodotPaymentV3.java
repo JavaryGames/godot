@@ -55,10 +55,14 @@ public class GodotPaymentV3 extends Godot.SingletonBase {
 	private Dictionary mSkuDetails = new Dictionary();
 
 	public void purchase(final String sku, final String transactionId) {
+		purchase(sku, transactionId, "inapp");
+	}
+
+	public void purchase(final String sku, final String transactionId, final String type) {
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				mPaymentManager.requestPurchase(sku, transactionId);
+				mPaymentManager.requestPurchase(sku, transactionId, type);
 			}
 		});
 	}
@@ -77,10 +81,14 @@ public class GodotPaymentV3 extends Godot.SingletonBase {
 	}
 
 	public void consumeUnconsumedPurchases() {
+		consumeUnconsumedPurchases("inapp");
+	}
+
+	public void consumeUnconsumedPurchases(final String type) {
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				mPaymentManager.consumeUnconsumedPurchases();
+				mPaymentManager.consumeUnconsumedPurchases(type);
 			}
 		});
 	}
@@ -152,12 +160,16 @@ public class GodotPaymentV3 extends Godot.SingletonBase {
 		return this.transactionId;
 	}
 
+	public void requestPurchased(){
+		requestPurchased("inapp");
+	}
+
 	// request purchased items are not consumed
-	public void requestPurchased() {
+	public void requestPurchased(final String type) {
 		activity.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				mPaymentManager.requestPurchased();
+				mPaymentManager.requestPurchased(type);
 			}
 		});
 	}
@@ -190,8 +202,14 @@ public class GodotPaymentV3 extends Godot.SingletonBase {
 		mPaymentManager.consume(sku);
 	}
 
+	public void querySkuDetails(final String[] list){
+		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> QUERYING WITHOUT TYPE");
+		querySkuDetails(list, "inapp");
+	}
+
 	// query in app item detail info
-	public void querySkuDetails(String[] list) {
+	public void querySkuDetails(String[] list, String type) {
+		System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> QUERYING");
 		List<String> nKeys = Arrays.asList(list);
 		List<String> cKeys = Arrays.asList(mSkuDetails.get_keys());
 		ArrayList<String> fKeys = new ArrayList<String>();
@@ -201,7 +219,7 @@ public class GodotPaymentV3 extends Godot.SingletonBase {
 			}
 		}
 		if (fKeys.size() > 0) {
-			mPaymentManager.querySkuDetails(fKeys.toArray(new String[0]));
+			mPaymentManager.querySkuDetails(fKeys.toArray(new String[0]), type);
 		} else {
 			completeSkuDetail();
 		}

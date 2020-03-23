@@ -111,7 +111,7 @@ public class PaymentsManager {
 		}
 	};
 
-	public void requestPurchase(final String sku, String transactionId) {
+	public void requestPurchase(final String sku, String transactionId, String type) {
 		new PurchaseTask(mService, activity) {
 			@Override
 			protected void error(String message) {
@@ -128,14 +128,14 @@ public class PaymentsManager {
 				godotPaymentV3.callbackAlreadyOwned(sku);
 			}
 		}
-				.purchase(sku, transactionId);
+				.purchase(sku, transactionId, type);
 	}
 
 	public boolean isConnected() {
 		return mService != null;
 	}
 
-	public void consumeUnconsumedPurchases() {
+	public void consumeUnconsumedPurchases(final String type) {
 		new ReleaseAllConsumablesTask(mService, activity) {
 			@Override
 			protected void success(String sku, String receipt, String signature, String token) {
@@ -154,17 +154,17 @@ public class PaymentsManager {
 				godotPaymentV3.callbackSuccessNoUnconsumedPurchases();
 			}
 		}
-				.consumeItAll();
+				.consumeItAll(type);
 	}
 
-	public void requestPurchased() {
+	public void requestPurchased(final String type) {
 		try {
 			PaymentsCache pc = new PaymentsCache(activity);
 
 			String continueToken = null;
 
 			do {
-				Bundle bundle = mService.getPurchases(3, activity.getPackageName(), "inapp", continueToken);
+				Bundle bundle = mService.getPurchases(3, activity.getPackageName(), type, continueToken);
 
 				if (bundle.getInt("RESPONSE_CODE") == 0) {
 
@@ -358,7 +358,8 @@ public class PaymentsManager {
 			return iab_msgs[code];
 	}
 
-	public void querySkuDetails(final String[] list) {
+
+	public void querySkuDetails(final String[] list,final String type) {
 		(new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -390,7 +391,7 @@ public class PaymentsManager {
 					querySkus.putStringArrayList("ITEM_ID_LIST", skuPartList);
 					Bundle skuDetails = null;
 					try {
-						skuDetails = mService.getSkuDetails(3, activity.getPackageName(), "inapp", querySkus);
+						skuDetails = mService.getSkuDetails(3, activity.getPackageName(), type, querySkus);
 						if (!skuDetails.containsKey("DETAILS_LIST")) {
 							int response = getResponseCodeFromBundle(skuDetails);
 							if (response != BILLING_RESPONSE_RESULT_OK) {

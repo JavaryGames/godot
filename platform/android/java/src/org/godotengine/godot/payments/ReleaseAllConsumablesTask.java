@@ -88,10 +88,11 @@ abstract public class ReleaseAllConsumablesTask {
 		this.mService = mService;
 	}
 
-	public void consumeItAll() {
+
+	public void consumeItAll(final String type) {
 		try {
 			//Log.d("godot", "consumeItall for " + context.getPackageName());
-			Bundle bundle = mService.getPurchases(3, context.getPackageName(), "inapp", null);
+			Bundle bundle = mService.getPurchases(3, context.getPackageName(), type, null);
 
 			if (bundle.getInt("RESPONSE_CODE") == 0) {
 

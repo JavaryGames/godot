@@ -60,7 +60,7 @@ abstract public class PurchaseTask {
 
 	private boolean isLooping = false;
 
-	public void purchase(final String sku, final String transactionId) {
+	public void purchase(final String sku, final String transactionId,final String type) {
 		Log.d("XXX", "Starting purchase for: " + sku);
 		PaymentsCache pc = new PaymentsCache(context);
 		Boolean isBlocked = pc.getConsumableFlag("block", sku);
@@ -75,7 +75,7 @@ abstract public class PurchaseTask {
 
 		Bundle buyIntentBundle;
 		try {
-			buyIntentBundle = mService.getBuyIntent(3, context.getApplicationContext().getPackageName(), sku, "inapp", hash);
+			buyIntentBundle = mService.getBuyIntent(3, context.getApplicationContext().getPackageName(), sku, type, hash);
 		} catch (RemoteException e) {
 			//Log.d("XXX", "Error: " + e.getMessage());
 			error(e.getMessage());
