@@ -128,6 +128,11 @@ class ScriptDebuggerRemote : public ScriptDebugger {
 	void _send_video_memory();
 
 	Ref<MultiplayerAPI> multiplayer;
+	
+	void _execute_expression(int stack_frame, const String &expression);
+
+	void _update_watch(int p_index);
+	void _send_remove_watch(int p_index);
 
 	ErrorHandlerList eh;
 	static void _err_handler(void *, const char *, const char *, int p_line, const char *, const char *, ErrorHandlerType p_type);

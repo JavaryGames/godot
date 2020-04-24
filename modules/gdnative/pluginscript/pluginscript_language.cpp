@@ -377,14 +377,7 @@ void PluginScriptLanguage::debug_get_globals(List<String> *p_locals, List<Varian
 	}
 }
 
-String PluginScriptLanguage::debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems, int p_max_depth) {
-	if (_desc.debug_parse_stack_level_expression) {
-		godot_string tmp = _desc.debug_parse_stack_level_expression(_data, p_level, (godot_string *)&p_expression, p_max_subitems, p_max_depth);
-		String ret = *(String *)&tmp;
-		godot_string_destroy(&tmp);
-		return ret;
-	}
-	return String("Nothing");
+void PluginScriptLanguage::debug_get_named_globals(List<String> *p_globals, List<Variant> *p_values) {
 }
 
 void PluginScriptLanguage::reload_all_scripts() {

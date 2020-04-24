@@ -1675,6 +1675,7 @@ bool Main::start() {
 					if (global_var) {
 						for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 							ScriptServer::get_language(i)->add_global_constant(name, Variant());
+							ScriptServer::get_language(i)->add_named_global_constant(name, Variant());
 						}
 					}
 				}
@@ -1723,6 +1724,7 @@ bool Main::start() {
 					if (global_var) {
 						for (int i = 0; i < ScriptServer::get_language_count(); i++) {
 							ScriptServer::get_language(i)->add_global_constant(name, n);
+							ScriptServer::get_language(i)->add_named_global_constant(name, n);
 						}
 					}
 				}

@@ -390,9 +390,12 @@ void GDScriptLanguage::debug_get_globals(List<String> *p_globals, List<Variant> 
 	}
 }
 
-String GDScriptLanguage::debug_parse_stack_level_expression(int p_level, const String &p_expression, int p_max_subitems, int p_max_depth) {
+void GDScriptLanguage::debug_get_named_globals(List<String> *p_globals, List<Variant> *p_values) {
 
-	return "";
+	for (const Map<StringName, Variant>::Element *E = get_named_globals_map().front(); E; E = E->next()) {
+		p_globals->push_back(E->key());
+		p_values->push_back(E->value());
+	}
 }
 
 void GDScriptLanguage::get_recognized_extensions(List<String> *p_extensions) const {
