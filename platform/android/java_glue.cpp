@@ -682,11 +682,11 @@ static String _get_unique_id() {
 	return jstring_to_string(s, env);
 }
 
-static void _show_vk(const String &p_existing) {
+static void _show_vk(const String &p_existing, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
 
 	JNIEnv *env = ThreadAndroid::get_env();
 	jstring jStr = env->NewStringUTF(p_existing.utf8().get_data());
-	env->CallVoidMethod(godot_io, _showKeyboard, jStr);
+	env->CallVoidMethod(godot_io, _showKeyboard, jStr, p_max_input_length, p_cursor_start, p_cursor_end);
 }
 
 static void _set_screen_orient(int p_orient) {
@@ -828,7 +828,7 @@ JNIEXPORT void JNICALL Java_org_godotengine_godot_GodotLib_initialize(JNIEnv *en
 			_getModel = env->GetMethodID(c, "getModel", "()Ljava/lang/String;");
 			_getScreenDPI = env->GetMethodID(c, "getScreenDPI", "()I");
 			_getUniqueID = env->GetMethodID(c, "getUniqueID", "()Ljava/lang/String;");
-			_showKeyboard = env->GetMethodID(c, "showKeyboard", "(Ljava/lang/String;)V");
+			_showKeyboard = env->GetMethodID(c, "showKeyboard", "(Ljava/lang/String;III)V");
 			_hideKeyboard = env->GetMethodID(c, "hideKeyboard", "()V");
 			_setScreenOrientation = env->GetMethodID(c, "setScreenOrientation", "(I)V");
 			_getSystemDir = env->GetMethodID(c, "getSystemDir", "(I)Ljava/lang/String;");

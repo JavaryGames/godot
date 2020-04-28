@@ -52,6 +52,7 @@ public class GodotTextInputWrapper implements TextWatcher, OnEditorActionListene
 	private final GodotView mView;
 	private final GodotEditText mEdit;
 	private String mOriginText;
+	private boolean mHasSelection;
 
 	// ===========================================================
 	// Constructors
@@ -76,6 +77,10 @@ public class GodotTextInputWrapper implements TextWatcher, OnEditorActionListene
 		this.mOriginText = originText;
 	}
 
+	public void setSelection(boolean selection) {
+		mHasSelection = selection;
+	}
+
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
@@ -94,6 +99,11 @@ public class GodotTextInputWrapper implements TextWatcher, OnEditorActionListene
 				for (int i = 0; i < count; ++i) {
 					GodotLib.key(KeyEvent.KEYCODE_DEL, 0, true);
 					GodotLib.key(KeyEvent.KEYCODE_DEL, 0, false);
+
+					if (mHasSelection) {
+						mHasSelection = false;
+						break;
+					}
 				}
 			}
 		});

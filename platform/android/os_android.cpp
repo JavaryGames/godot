@@ -537,10 +537,10 @@ Rect2 OS_Android::get_window_inset() const {
 }
 
 
-void OS_Android::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect) {
 
+void OS_Android::show_virtual_keyboard(const String &p_existing_text, const Rect2 &p_screen_rect, int p_max_input_length, int p_cursor_start, int p_cursor_end) {
 	if (show_virtual_keyboard_func) {
-		show_virtual_keyboard_func(p_existing_text);
+		show_virtual_keyboard_func(p_existing_text, p_max_input_length, p_cursor_start, p_cursor_end);
 	} else {
 
 		ERR_PRINT("Virtual keyboard not available");
