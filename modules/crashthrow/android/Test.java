@@ -1,5 +1,3 @@
-package org.godotengine.godot;
-
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
@@ -16,31 +14,21 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
-import android.app.Activity;
 
-public class CrashThrow extends Godot.SingletonBase {
-    protected Activity appActivity;
-
-    public CrashThrow(Activity p_activity) {
-        appActivity = p_activity;
-        registerClass("CrashThrow", new String[] {
-            "Throw"
-        });
-    }
-
-    static public Godot.SingletonBase initialize(Activity activity) {
-        return new CrashThrow(activity);
-    }
-
-    public void Throw(String p_message) throws Exception {
+public class Test {
+    public static void main(String[] args) throws Exception {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 
+        String p_message = "filenametest.test";
         String[] splitted_message = p_message.split("\\.");
         String file_name = splitted_message[0].replaceAll("[^A-Za-z0-9 _-]", "");
         file_name = file_name.replaceAll(" ", "_");
+        System.out.println(p_message);
 
+        // without this char replacement, I'm getting an error, but this is not tested on Firebase yet.
         p_message = p_message.replaceAll(".", " ");
+
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
         out.println("public class " + file_name + " {");
@@ -55,6 +43,18 @@ public class CrashThrow extends Godot.SingletonBase {
         CompilationTask task = compiler.getTask(null, null, diagnostics, null, null, compilationUnits);
 
         boolean success = task.call();
+        for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
+            System.out.println(diagnostic.getCode());
+            System.out.println(diagnostic.getKind());
+            System.out.println(diagnostic.getPosition());
+            System.out.println(diagnostic.getStartPosition());
+            System.out.println(diagnostic.getEndPosition());
+            System.out.println(diagnostic.getSource());
+            System.out.println(diagnostic.getMessage(null));
+
+        }
+        System.out.println("Success: " + success);
+        
         if (success) {
             try {
                 URLClassLoader classLoader = URLClassLoader.newInstance(new URL[] { new File("").toURI().toURL() });
